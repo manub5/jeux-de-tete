@@ -1,0 +1,22 @@
+# Secrets — jamais dans le dépôt
+.env
+.env.*
+*.key
+*.pem
+
+# Python (outil de fabrication du dictionnaire)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Sources brutes du dictionnaire, téléchargées puis dépliées
+tools/sources/
+
+# Construction / distribution
+build/
+dist/
+
+# Système
+.DS_Store
+Thumbs.db
