@@ -23,3 +23,6 @@ _site/
 # Système
 .DS_Store
 Thumbs.db
+
+# Documents de conception : gardés en local, jamais publiés
+docs/superpowers/
