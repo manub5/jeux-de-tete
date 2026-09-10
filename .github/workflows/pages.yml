@@ -3,7 +3,10 @@ name: Publier sur GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # Les deux noms : `git init` crée `master` sur beaucoup d'installations,
+    # `gh repo create --push` fait de la branche courante la branche par défaut,
+    # et une publication qui ne se déclenche jamais est très déroutante.
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -28,9 +31,17 @@ jobs:
           node-version: '22'
       - name: Tests des moteurs
         run: node --test 'tests/**/*.test.js'
+      - name: Rassembler le site
+        # Publier `.` mettrait en ligne l'atelier avec l'ouvrage : le plan, le
+        # spec, la chaîne Python de fabrication du dictionnaire et les tests.
+        # Rien de secret, mais rien qui ait sa place sur le site non plus.
+        run: |
+          mkdir -p _site
+          cp -r index.html main.js sw.js manifest.webmanifest \
+                css core games lexicon data icons _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deploiement
         uses: actions/deploy-pages@v4
