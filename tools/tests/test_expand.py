@@ -8,13 +8,19 @@ import pytest
 from tools.dic.aff import AffixTable, parse_aff
 from tools.dic.expand import expand_dictionary, expand_entry, parse_dic_line
 
+# Mirrors the real affix file closely enough to be honest. The empty-suffix
+# rule `SFX S. 0 0` is not decoration: the real file has one
+# (`SFX S. 0 0/L'D'Q' [^sxz]`), and it is what lets a NEEDAFFIX entry's
+# prefixed form become a word at all. Drop it and `kilometre` is only
+# reachable through a double prefix, which Hunspell never does.
 SAMPLE_AFF = """\
 FLAG long
 FULLSTRIP
 NEEDAFFIX ()
 FORBIDDENWORD {}
 
-SFX S. Y 1
+SFX S. Y 2
+SFX S. 0 0 .
 SFX S. 0 s .
 
 SFX X. Y 1
@@ -76,6 +82,13 @@ def test_a_prefix_keeps_the_entry_flags_so_suffixes_still_apply(
     forms = expand_entry("metre", frozenset({"Um", "()"}), table)
     assert "metres" in forms
     assert "kilometres" in forms
+
+
+def test_a_prefix_does_not_fire_on_its_own_output(table: AffixTable) -> None:
+    """Hunspell stacks no two prefixes here, so neither do we."""
+    forms = expand_entry("metre", frozenset({"Um", "()"}), table)
+    assert "kilometre" in forms
+    assert "kilokilometre" not in forms
 
 
 def test_expansion_never_loops(table: AffixTable) -> None:

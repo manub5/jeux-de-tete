@@ -75,7 +75,13 @@ def expand_entry(
         if depth >= max_depth:
             continue
 
-        carried = form_flags - {table.needaffix} if table.needaffix else form_flags
+        # Only suffix-capable flags survive onto an affixed form. Hunspell does
+        # not stack two prefixes without COMPLEXPREFIXES, which the French affix
+        # file does not set; keeping a prefix flag here lets it re-fire on its
+        # own output (l'l'arbre) and inflates the expansion roughly tenfold.
+        # NEEDAFFIX falls out of this filter for free: it is not a suffix flag,
+        # and an affixed form no longer needs an affix.
+        carried = frozenset(flag for flag in form_flags if flag in table.suffixes)
         for flag in form_flags:
             for rule in table.suffixes.get(flag, ()):
                 produced = _apply_suffix(form, rule, table.fullstrip)
