@@ -6,6 +6,25 @@ const STORE = 'dictionary';
 const KEY = 'signatures';
 const SOURCE = 'data/signatures.txt.gz';
 
+/**
+ * Bump this whenever data/signatures.txt.gz is rebuilt. The service worker's
+ * cache version does not reach IndexedDB, so without a version of its own a
+ * phone would keep the dictionary it first downloaded for ever — and quietly
+ * refuse words a newer one accepts. A record that fails this check, including
+ * one written by an older build that stored a bare string, is re-downloaded.
+ */
+export const DICTIONARY_VERSION = 1;
+
+/** Is this cached record usable as it stands? */
+export function isCurrent(record) {
+  return (
+    typeof record === 'object' &&
+    record !== null &&
+    record.version === DICTIONARY_VERSION &&
+    typeof record.text === 'string'
+  );
+}
+
 /** Read the index file: one line per signature, `signature<TAB>word word`. */
 export function parseIndex(text) {
   const index = new Map();
@@ -63,7 +82,8 @@ async function readCached() {
 async function writeCached(text) {
   try {
     const db = await openDatabase();
-    await transact(db, 'readwrite', (store) => store.put(text, KEY));
+    const record = { version: DICTIONARY_VERSION, text };
+    await transact(db, 'readwrite', (store) => store.put(record, KEY));
   } catch (error) {
     // Not fatal: the game works, it will just download again next time.
     console.warn('dictionnaire : écriture du cache impossible', error);
@@ -76,7 +96,8 @@ async function writeCached(text) {
  */
 export async function loadIndex({ onProgress = () => {} } = {}) {
   onProgress('cache');
-  let text = await readCached();
+  const cached = await readCached();
+  let text = isCurrent(cached) ? cached.text : undefined;
 
   if (typeof text !== 'string') {
     onProgress('téléchargement');
