@@ -86,8 +86,11 @@ function home(target) {
       button(game.title, () => router.go(game.id)),
       element('p', {
         class: 'sous-titre',
+        // One played game must read "1 partie", not "1 parties". The average was
+        // on his screen before the menu grew to three games, so it stays.
         text: record.played
-          ? `${game.subtitle} — ${record.played} parties, record ${record.best}`
+          ? `${game.subtitle} — ${record.played} partie${record.played > 1 ? 's' : ''}, ` +
+            `record ${record.best}, moyenne ${record.average}`
           : game.subtitle,
       })
     );
