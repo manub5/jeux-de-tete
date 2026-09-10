@@ -19,12 +19,21 @@ export function createRouter({
     // happen on every navigation: `go()` opens the route, then writes the hash,
     // and the hashchange listener arrives here a second time with the same name.
     if (route === current) return;
-    if (cleanup) cleanup();
+    if (cleanup) {
+      const leaving = cleanup;
+      // Forget it before running it: a screen that fails to tear itself down
+      // must not be run again, and must not trap the player on it either.
+      cleanup = null;
+      try {
+        leaving();
+      } catch (error) {
+        console.error('nettoyage de route', error);
+      }
+    }
     // Forget the old route before mounting the new one. If the mount throws,
     // the router must not be left pointing at a screen that never appeared —
     // the guard above would then refuse every attempt to open it again, and
     // the player would be stuck with no way back.
-    cleanup = null;
     current = null;
     container.replaceChildren();
     // Only a function is a cleanup. An arrow function written without braces

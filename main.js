@@ -5,10 +5,10 @@ import { createRouter } from './core/router.js';
 import { createStorage } from './core/storage.js';
 import { createStats } from './core/stats.js';
 import { element, button } from './core/ui.js';
-import { loadIndex } from './lexicon/loader.js';
+import { loadIndex, loadFrequencies } from './lexicon/loader.js';
 import { createLexicon } from './lexicon/lexicon.js';
 import { createSolver } from './lexicon/solver.js';
-import { mountLongestWord } from './games/mot-le-plus-long/screen.js';
+import { GAMES } from './games/index.js';
 
 const container = document.querySelector('#app');
 const storage = createStorage();
@@ -33,14 +33,26 @@ function correctionsFrom(store) {
   };
 }
 
-function showLoading(step) {
+/** `file` distinguishes the dictionary load from the frequency load: without
+ *  it, both share the same step names and the same messages appear twice on
+ *  first launch. */
+function showLoading(step, file = 'dictionnaire') {
   const messages = {
-    cache: 'Ouverture du dictionnaire…',
-    'téléchargement': 'Téléchargement du dictionnaire, une seule fois…',
-    lecture: 'Préparation du dictionnaire…',
+    cache: {
+      dictionnaire: 'Ouverture du dictionnaire…',
+      frequences: 'Ouverture de la liste des mots courants…',
+    },
+    'téléchargement': {
+      dictionnaire: 'Téléchargement du dictionnaire, une seule fois…',
+      frequences: 'Téléchargement de la liste des mots courants…',
+    },
+    lecture: {
+      dictionnaire: 'Préparation du dictionnaire…',
+      frequences: 'Préparation de la liste des mots courants…',
+    },
   };
   container.replaceChildren(
-    element('p', { class: 'chargement', text: messages[step] ?? 'Chargement…' })
+    element('p', { class: 'chargement', text: messages[step]?.[file] ?? 'Chargement…' })
   );
 }
 
@@ -60,18 +72,43 @@ function showFailure(error, retry) {
   );
 }
 
-function home(target, { stats: gameStats }) {
-  const record = gameStats.read('mot-le-plus-long');
-  target.append(
-    element('h1', { text: 'Jeux de tête' }),
-    button('Le mot le plus long', () => router.go('mot-le-plus-long')),
-    element('p', {
-      text: record.played
-        ? `${record.played} parties · record ${record.best} lettres · ` +
-          `moyenne ${record.average} · série ${gameStats.streak()} jours`
-        : 'Aucune partie jouée pour l’instant.',
-    })
-  );
+// Set once per start(), from whether the (optional) frequency file could be
+// loaded. Read here so home() stays a plain function of `target`, matching
+// every other route.
+let visibleGames = GAMES;
+let frequenciesAvailable = true;
+
+function home(target) {
+  target.append(element('h1', { text: 'Jeux de tête' }));
+  for (const game of visibleGames) {
+    const record = stats.read(game.id);
+    target.append(
+      button(game.title, () => router.go(game.id)),
+      element('p', {
+        class: 'sous-titre',
+        // One played game must read "1 partie", not "1 parties". The average was
+        // on his screen before the menu grew to three games, so it stays.
+        text: record.played
+          ? `${game.subtitle} — ${record.played} partie${record.played > 1 ? 's' : ''}, ` +
+            `record ${record.best}, moyenne ${record.average}`
+          : game.subtitle,
+      })
+    );
+  }
+  if (!frequenciesAvailable) {
+    target.append(
+      element('p', {
+        class: 'sous-titre',
+        text:
+          'La liste des mots courants n’a pas pu être ouverte : certains ' +
+          'jeux sont indisponibles pour l’instant.',
+      })
+    );
+  }
+  const streak = stats.streak();
+  if (streak > 1) {
+    target.append(element('p', { text: `${streak} jours d’affilée.` }));
+  }
 }
 
 let router;
@@ -79,18 +116,35 @@ let hashListenerAttached = false;
 
 async function start() {
   try {
-    const index = await loadIndex({ onProgress: showLoading });
+    const index = await loadIndex({ onProgress: (step) => showLoading(step, 'dictionnaire') });
+
+    // The frequency file is optional: anagrams and "tous les mots" need it,
+    // but "le mot le plus long" does not, and must not go down with it. Its
+    // failure is logged, never shown — showFailure's comment explains why.
+    let frequencies;
+    try {
+      frequencies = await loadFrequencies({ onProgress: (step) => showLoading(step, 'frequences') });
+    } catch (error) {
+      console.error('liste des mots courants indisponible', error);
+      frequencies = new Map();
+    }
+
     const solver = createSolver(index);
     const lexicon = createLexicon(index, correctionsFrom(storage));
-    router = createRouter({
-      routes: {
-        accueil: (target) => home(target, { stats }),
-        'mot-le-plus-long': (target) =>
-          mountLongestWord(target, { solver, lexicon, stats, onQuit: () => router.go('accueil') }),
-      },
-      container,
-      fallback: 'accueil',
-    });
+    const tools = {
+      solver, lexicon, stats, storage, frequencies,
+      onQuit: () => router.go('accueil'),
+    };
+
+    frequenciesAvailable = frequencies.size > 0;
+    visibleGames = GAMES.filter((game) => !game.needsFrequencies || frequenciesAvailable);
+
+    const routes = { accueil: home };
+    for (const game of visibleGames) {
+      routes[game.id] = (target) => game.mount(target, tools);
+    }
+
+    router = createRouter({ routes, container, fallback: 'accueil' });
     router.start();
     if (!hashListenerAttached) {
       globalThis.addEventListener('hashchange', () => router.start());

@@ -40,7 +40,7 @@ export function createGame({ solver, lexicon, rng, letters }) {
 
     propose(input) {
       if (phase === 'terminée') {
-        throw new Error('la partie est terminée');
+        throw new Error('the game is over');
       }
       const verdict = lexicon.validate(input);
       if (!verdict.ok) {

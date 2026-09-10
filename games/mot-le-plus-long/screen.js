@@ -148,7 +148,9 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
           : 'Aucun mot n’était trouvable dans ce tirage.',
       }),
       element('details', {}, [
-        element('summary', { text: `Voir les ${result.found.length} mots possibles` }),
+        element('summary', { text: result.found.length === 1
+          ? 'Voir le seul mot possible'
+          : `Voir les ${result.found.length} mots possibles` }),
         element('p', { text: result.found.join(', ') }),
       ]),
       button('Nouvelle partie', newGame),

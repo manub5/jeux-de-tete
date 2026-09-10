@@ -3,8 +3,6 @@
 import { todayKey } from './rng.js';
 
 const RECENT = 10;
-const NO_HISTORY = { played: 0, best: 0, recent: [], lastPlayed: null };
-const NO_STREAK = { days: 0, lastDay: null };
 
 /**
  * A stored value that parses but has the wrong shape must never break the game.
@@ -15,7 +13,9 @@ const NO_STREAK = { days: 0, lastDay: null };
  * history at all.
  */
 function asHistory(saved) {
-  if (typeof saved !== 'object' || saved === null) return { ...NO_HISTORY };
+  if (typeof saved !== 'object' || saved === null) {
+    return { played: 0, best: 0, recent: [], lastPlayed: null };
+  }
   return {
     played: Number.isFinite(saved.played) ? saved.played : 0,
     best: Number.isFinite(saved.best) ? saved.best : 0,
@@ -25,7 +25,9 @@ function asHistory(saved) {
 }
 
 function asStreak(saved) {
-  if (typeof saved !== 'object' || saved === null) return { ...NO_STREAK };
+  if (typeof saved !== 'object' || saved === null) {
+    return { days: 0, lastDay: null };
+  }
   return {
     days: Number.isFinite(saved.days) ? saved.days : 0,
     lastDay: typeof saved.lastDay === 'string' ? saved.lastDay : null,
