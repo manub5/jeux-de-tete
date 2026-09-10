@@ -1,21 +1,24 @@
 /* css/mot-le-plus-long.css */
+/* Five columns, always. Left to wrap, ten tiles break 8 + 2 on a phone, and a
+   Scrabble player reads his rack at a glance — a lopsided row costs him that.
+   Two rows of five also make each tile much larger on the same width. */
 .tirage {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
   margin: var(--marge) 0;
+  max-width: 22rem;
 }
 
 .jeton {
   display: grid;
   place-items: center;
-  width: 2.2rem;
-  height: 2.6rem;
+  aspect-ratio: 4 / 5;
   border: 2px solid var(--bordure);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--fond-carte);
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.6rem;
 }
 
 .jeton--vide { color: var(--texte-faible); }
@@ -42,3 +45,5 @@
 .retour .bouton { margin-left: 0.5rem; }
 .score { font-weight: 700; }
 .propositions { padding-left: 1.2rem; }
+/* No empty list taking up room before the first word is found. */
+.propositions:empty { display: none; }
