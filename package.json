@@ -1,0 +1,10 @@
+{
+  "name": "jeux-de-tete",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Sept jeux hors ligne pour telephone Android",
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.js'"
+  }
+}

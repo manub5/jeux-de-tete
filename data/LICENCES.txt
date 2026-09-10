@@ -1,0 +1,4 @@
+Dictionnaire dérivé des dictionnaires orthographiques français de Dicollecte /
+Grammalecte, distribués sous licence Mozilla Public License 2.0.
+Source : https://codeberg.org/dicollage/dictionnaires
+Le texte de la licence est disponible sur https://mozilla.org/MPL/2.0/
