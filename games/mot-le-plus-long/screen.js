@@ -21,8 +21,13 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
     return element(
       'div',
       { class: 'tirage', 'aria-label': 'Vos dix lettres' },
-      game.letters.map((letter) =>
-        element('span', { class: 'jeton', text: letter.toUpperCase() })
+      // `--rang` échelonne la chute : le reste est dans la feuille de style.
+      game.letters.map((letter, rang) =>
+        element('span', {
+          class: 'jeton',
+          style: `--rang: ${rang}`,
+          text: letter.toUpperCase(),
+        })
       )
     );
   }
