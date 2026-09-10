@@ -61,6 +61,19 @@ def test_the_default_threshold_is_one_per_million() -> None:
     assert MIN_FREQUENCY == 1.0
 
 
+def test_a_spelling_whose_only_frequency_is_zero_is_still_read(tmp_path: Path) -> None:
+    path = tmp_path / "lexique.tsv"
+    path.write_text("ortho\tfreqfilms2\nnul\t0\n", encoding="utf-8")
+    assert read_frequencies(path) == {"nul": 0.0}
+
+
+def test_a_high_frequency_keeps_every_digit(tmp_path: Path) -> None:
+    # `a` really is 12800.81 in Lexique. The default `:g` would write 12800.8.
+    target = tmp_path / "frequences.txt.gz"
+    write_frequencies({"a": 12800.81}, target)
+    assert gzip.decompress(target.read_bytes()).decode("utf-8") == "a\t12800.81\n"
+
+
 def test_the_written_file_is_sorted_gzipped_text(tmp_path: Path) -> None:
     target = tmp_path / "frequences.txt.gz"
     write_frequencies({"chien": 30.0, "chat": 42.5}, target)

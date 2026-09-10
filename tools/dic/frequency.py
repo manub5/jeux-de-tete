@@ -2,8 +2,8 @@
 """Read the Lexique 3 frequency table and keep what the games can use.
 
 Source: Lexique 3.83 (New & Pallier), CC BY-SA 4.0. The derived file inherits
-that licence — attribution and share-alike — which is why data/LICENCES.txt
-names it separately from the dictionary's MPL 2.0.
+that licence — attribution and share-alike — which is why data/LICENCES.txt has
+to name it separately from the dictionary's MPL 2.0.
 
 `freqfilms2` counts occurrences per million in a corpus of film subtitles.
 Spoken French is the right yardstick here: it reflects what a player actually
@@ -36,7 +36,9 @@ def read_frequencies(path: Path) -> dict[str, float]:
                 value = float(raw)
             except ValueError:
                 continue
-            if value > frequencies.get(spelling, 0.0):
+            # Not `value > frequencies.get(spelling, 0.0)`: a word whose only
+            # frequency is exactly zero would then never be recorded at all.
+            if spelling not in frequencies or value > frequencies[spelling]:
                 frequencies[spelling] = value
     return frequencies
 
@@ -56,6 +58,9 @@ def keep_known(
 
 def write_frequencies(frequencies: dict[str, float], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines = (f"{word}\t{frequencies[word]:g}\n" for word in sorted(frequencies))
+    # `.10g` and not `g`: the default six significant digits would silently
+    # write 12800.8 for a word whose real frequency is 12800.81. The compact
+    # form is kept — 30.0 still writes as `30`.
+    lines = (f"{word}\t{frequencies[word]:.10g}\n" for word in sorted(frequencies))
     with gzip.open(path, "wt", encoding="utf-8", compresslevel=9) as handle:
         handle.writelines(lines)
