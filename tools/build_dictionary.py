@@ -17,7 +17,10 @@ from pathlib import Path
 
 from tools.dic.aff import parse_aff
 from tools.dic.build import build_index, write_index
+from tools.dic.checklist import check
 from tools.dic.expand import expand_dictionary
+from tools.dic.text import is_playable
+from tools.dic.verify import hunspell_available, reject_unknown
 
 MIN_EXPECTED_FORMS = 300_000
 
@@ -54,8 +57,25 @@ def main(argv: list[str]) -> int:
     forms, forbidden = expand_dictionary(dic_path, table)
     print(f"  {len(forms)} formes, {len(forbidden)} interdites")
 
+    # Filter before verifying, not after. `build_index` applies exactly this
+    # filter anyway, so the final index is identical either way — but hunspell
+    # then only sees candidates that could actually be played. The expansion is
+    # mostly elisions (l'arbre, d'arbre, qu'arbre), all of which carry an
+    # apostrophe and are dropped here, so this cuts the number of hunspell
+    # batches and the resident set by a large factor.
+    playable = {form for form in forms if is_playable(form)}
+    print(f"  {len(playable)} formes jouables sur {len(forms)}")
+
+    if hunspell_available():
+        print("vérification par hunspell")
+        rejected = reject_unknown(playable, args.sources / args.variant)
+        print(f"  {len(rejected)} formes écartées")
+        playable -= rejected
+    else:
+        print("hunspell absent : vérification sautée", file=sys.stderr)
+
     print("construction de l'index")
-    index = build_index(forms)
+    index = build_index(playable)
     kept = sum(len(words) for words in index.values())
     print(f"  {kept} mots jouables, {len(index)} signatures")
 
@@ -65,6 +85,12 @@ def main(argv: list[str]) -> int:
             "l'expansion est probablement incomplète",
             file=sys.stderr,
         )
+        return 1
+
+    anomalies = check(index)
+    if anomalies:
+        for line in anomalies:
+            print(f"  anomalie : {line}", file=sys.stderr)
         return 1
 
     target = args.out / "signatures.txt.gz"
