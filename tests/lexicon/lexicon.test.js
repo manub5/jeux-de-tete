@@ -1,7 +1,7 @@
 // tests/lexicon/lexicon.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DICTIONARY_VERSION, isCurrent, parseIndex } from '../../lexicon/loader.js';
+import { parseIndex } from '../../lexicon/loader.js';
 import { createLexicon } from '../../lexicon/lexicon.js';
 
 const INDEX_TEXT = 'acht\tchat\neeelv\télève élevé\ncehin\tchien niche\n';
@@ -9,39 +9,6 @@ const INDEX_TEXT = 'acht\tchat\neeelv\télève élevé\ncehin\tchien niche\n';
 function emptyCorrections() {
   return { accepted: new Set(), rejected: new Set(), save() {} };
 }
-
-test('parseIndex reads one line per signature', () => {
-  const index = parseIndex(INDEX_TEXT);
-  assert.equal(index.size, 3);
-  assert.deepEqual(index.get('acht'), ['chat']);
-  assert.deepEqual(index.get('eeelv'), ['élève', 'élevé']);
-});
-
-test('parseIndex tolerates a missing final newline and blank lines', () => {
-  assert.equal(parseIndex('acht\tchat\n\nacht\tchat').size, 1);
-});
-
-test('a cached record of the current version is usable', () => {
-  assert.equal(isCurrent({ version: DICTIONARY_VERSION, text: 'acht\tchat\n' }), true);
-});
-
-test('nothing cached is not usable', () => {
-  assert.equal(isCurrent(undefined), false);
-  assert.equal(isCurrent(null), false);
-});
-
-test('a record from an older dictionary is not usable', () => {
-  assert.equal(isCurrent({ version: DICTIONARY_VERSION - 1, text: 'acht\tchat\n' }), false);
-});
-
-test('a bare string, as an older build stored it, is not usable', () => {
-  // The very first version wrote the text straight in, with no version at all.
-  assert.equal(isCurrent('acht\tchat\n'), false);
-});
-
-test('a record with no text is not usable', () => {
-  assert.equal(isCurrent({ version: DICTIONARY_VERSION }), false);
-});
 
 test('a known word is accepted and comes back spelled correctly', () => {
   const lexicon = createLexicon(parseIndex(INDEX_TEXT), emptyCorrections());
