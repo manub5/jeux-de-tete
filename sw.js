@@ -39,6 +39,7 @@ const ASSETS = [
   'index.html',
   'lexicon/lexicon.js',
   'lexicon/loader.js',
+  'lexicon/reachable.js',
   'lexicon/signature.js',
   'lexicon/solver.js',
   'main.js',

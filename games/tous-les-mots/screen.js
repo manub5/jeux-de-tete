@@ -46,6 +46,9 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
       court: 'Il faut au moins trois lettres.',
       lettres: 'Ce mot n’est pas dans ces lettres.',
       'déjà': 'Vous l’avez déjà trouvé.',
+      // Il l'a lui-même écarté depuis « le mot le plus long ». Le lui dire, plutôt
+      // que de prétendre que le dictionnaire l'ignore.
+      'refusé': 'Vous avez écarté ce mot du dictionnaire.',
     };
 
     // Leaving these seven letters behind is a two-step action: a game can
