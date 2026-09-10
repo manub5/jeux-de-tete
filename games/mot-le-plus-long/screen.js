@@ -63,6 +63,11 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       } else if (result.reason === 'lettres') {
         feedback.className = 'retour erreur';
         feedback.textContent = 'Ce mot utilise des lettres qui ne sont pas dans le tirage.';
+      } else if (result.reason === 'refusé') {
+        // He struck this word out himself; offer him the way back.
+        feedback.className = 'retour erreur';
+        feedback.textContent = `« ${attempt} » est dans vos mots refusés.`;
+        feedback.append(acceptButton(attempt));
       } else {
         feedback.className = 'retour erreur';
         feedback.textContent = `« ${attempt} » n’est pas dans le dictionnaire.`;

@@ -18,7 +18,7 @@
   font-size: 1.2rem;
 }
 
-.jeton--vide { color: var(--bordure); }
+.jeton--vide { color: var(--texte-faible); }
 
 .actions { display: flex; gap: var(--marge); }
 .actions .bouton { flex: 1; }
