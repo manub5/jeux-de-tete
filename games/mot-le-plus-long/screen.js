@@ -76,6 +76,7 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       field.value = '';
       field.focus();
       refreshScore();
+      refreshProposals();
     }
 
     /** Spec section 5: the player's own corrections, offered where it hurts. */
@@ -106,6 +107,16 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
     }
     refreshScore();
 
+    const proposals = element('ul', { class: 'propositions' });
+    function refreshProposals() {
+      proposals.replaceChildren(
+        ...game.proposals.map((entry) =>
+          element('li', { text: `${entry.word} (${entry.length})` })
+        )
+      );
+    }
+    refreshProposals();
+
     field.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') submit();
     });
@@ -119,11 +130,7 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       button('Proposer', submit),
       feedback,
       score,
-      element('ul', { class: 'propositions' },
-        game.proposals.map((entry) =>
-          element('li', { text: `${entry.word} (${entry.length})` })
-        )
-      ),
+      proposals,
       button('J’ai terminé', finish, { className: 'bouton bouton--discret' }),
     ]);
   }
