@@ -54,7 +54,7 @@ function showFailure(error, retry) {
     element('p', {
       text:
         'Le dictionnaire n’a pas pu être téléchargé. Vérifie la connexion, ' +
-        'puis réessaie. Les jeux qui n’en ont pas besoin restent jouables.',
+        'puis réessaie.',
     }),
     button('Réessayer', retry)
   );
@@ -67,13 +67,15 @@ function home(target, { stats: gameStats }) {
     button('Le mot le plus long', () => router.go('mot-le-plus-long')),
     element('p', {
       text: record.played
-        ? `${record.played} parties · record ${record.best} lettres · série ${gameStats.streak()} jours`
+        ? `${record.played} parties · record ${record.best} lettres · ` +
+          `moyenne ${record.average} · série ${gameStats.streak()} jours`
         : 'Aucune partie jouée pour l’instant.',
     })
   );
 }
 
 let router;
+let hashListenerAttached = false;
 
 async function start() {
   try {
@@ -90,7 +92,10 @@ async function start() {
       fallback: 'accueil',
     });
     router.start();
-    globalThis.addEventListener('hashchange', () => router.start());
+    if (!hashListenerAttached) {
+      globalThis.addEventListener('hashchange', () => router.start());
+      hashListenerAttached = true;
+    }
   } catch (error) {
     showFailure(error, start);
   }

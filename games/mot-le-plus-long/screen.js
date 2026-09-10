@@ -82,8 +82,10 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
     function acceptButton(word) {
       return button('Ce mot existe', () => {
         lexicon.accept(word);
-        feedback.className = 'retour succes';
-        feedback.textContent = `« ${word} » est ajouté à votre dictionnaire.`;
+        // Replay it straight away: telling him the word is accepted while his
+        // score does not move is worse than refusing it in the first place.
+        field.value = word;
+        submit();
       }, { className: 'bouton bouton--discret' });
     }
 
@@ -91,7 +93,8 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       return button('Ce mot ne devrait pas exister', () => {
         lexicon.reject(word);
         feedback.className = 'retour';
-        feedback.textContent = `« ${word} » est retiré de votre dictionnaire.`;
+        feedback.textContent =
+          `« ${word} » est retiré de votre dictionnaire. Il reste compté pour cette partie.`;
       }, { className: 'bouton bouton--discret' });
     }
 

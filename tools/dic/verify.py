@@ -7,7 +7,7 @@ hunspell is a build-time tool only. The game never depends on it.
 from __future__ import annotations
 
 import shutil
-import subprocess
+import subprocess  # nosec B404 - build-time only, fixed argv, no shell (see docstring)
 from pathlib import Path
 
 BATCH_SIZE = 50_000
@@ -25,7 +25,8 @@ def reject_unknown(words: set[str], dictionary_base: Path) -> set[str]:
     """
     if not words:
         return set()
-    if not hunspell_available():
+    executable = shutil.which("hunspell")
+    if executable is None:
         raise RuntimeError("hunspell est introuvable : installez-le avant de vérifier")
 
     rejected: set[str] = set()
@@ -34,7 +35,7 @@ def reject_unknown(words: set[str], dictionary_base: Path) -> set[str]:
         batch = ordered[start : start + BATCH_SIZE]
         # Fixed argument list, no shell: nothing here is interpolated by a shell.
         result = subprocess.run(  # nosec B603 - fixed argv, no shell, local file
-            ["hunspell", "-d", str(dictionary_base), "-i", "UTF-8", "-l"],
+            [executable, "-d", str(dictionary_base), "-i", "UTF-8", "-l"],
             input="\n".join(batch) + "\n",
             capture_output=True,
             text=True,

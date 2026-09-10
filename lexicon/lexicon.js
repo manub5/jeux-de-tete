@@ -7,7 +7,7 @@ import { fold, signature } from './signature.js';
 
 export function createLexicon(index, corrections) {
   function canonicalForm(folded) {
-    for (const word of index.get([...folded].sort().join('')) ?? []) {
+    for (const word of index.get(signature(folded)) ?? []) {
       if (fold(word) === folded) return word;
     }
     return null;

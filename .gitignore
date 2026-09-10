@@ -9,6 +9,8 @@
 venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.ruff_cache/
 
 # Sources brutes du dictionnaire, téléchargées puis dépliées
 tools/sources/
@@ -16,6 +18,7 @@ tools/sources/
 # Construction / distribution
 build/
 dist/
+_site/
 
 # Système
 .DS_Store
