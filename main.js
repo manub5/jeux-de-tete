@@ -101,6 +101,7 @@ start();
 import { registerServiceWorker } from './core/update.js';
 
 function showUpdateBanner(apply) {
+  if (document.querySelector('.bandeau')) return; // never stack two
   const banner = element('div', { class: 'bandeau', role: 'status' }, [
     element('span', { text: 'Une nouvelle version est prête.' }),
     button('Recharger', apply),

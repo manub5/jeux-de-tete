@@ -4,6 +4,12 @@
 export function registerServiceWorker(onUpdateReady) {
   if (!('serviceWorker' in navigator)) return;
 
+  // A page opened before any worker existed gets claimed by the first one to
+  // activate, and the browser reports that as a controller change like any
+  // other. Reloading on it would restart the game under the player, on their
+  // very first visit, for no reason at all.
+  const wasControlled = Boolean(navigator.serviceWorker.controller);
+
   navigator.serviceWorker.register('sw.js').then((registration) => {
     // A worker already waiting means an update arrived while the page was shut.
     if (registration.waiting && navigator.serviceWorker.controller) {
@@ -25,7 +31,7 @@ export function registerServiceWorker(onUpdateReady) {
 
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) return;
+    if (!wasControlled || reloading) return;
     reloading = true;
     globalThis.location.reload();
   });

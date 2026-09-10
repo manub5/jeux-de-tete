@@ -5,7 +5,8 @@
 // classic failure of this kind of app: the old files are served forever and
 // nobody understands why nothing changes.
 const CACHE_VERSION = 'v1';
-const CACHE_NAME = `jeux-papa-${CACHE_VERSION}`;
+const CACHE_PREFIX = 'jeux-papa-';
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const ASSETS = [
   './',
@@ -43,8 +44,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const names = await caches.keys();
+      // Only this app's own caches. Filtering on "not the current name" would
+      // delete anything else that ever cached something on this origin.
       await Promise.all(
-        names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+        names
+          .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
       );
       await self.clients.claim();
     })()
