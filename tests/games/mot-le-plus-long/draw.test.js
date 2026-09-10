@@ -1,60 +1,77 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRng } from '../../../core/rng.js';
-import { CONSONANTS, DRAW_SIZE, VOWELS, drawLetter } from '../../../games/mot-le-plus-long/draw.js';
+import {
+  BAG,
+  DRAW_SIZE,
+  MIN_INTERESTING_LENGTH,
+  VOWELS,
+  countVowels,
+  drawRack,
+  fullBag,
+} from '../../../games/mot-le-plus-long/draw.js';
 
-test('the draw is ten letters long', () => {
+test('the rack is ten letters long', () => {
   assert.equal(DRAW_SIZE, 10);
+  assert.equal(MIN_INTERESTING_LENGTH, 4);
 });
 
-test('the two pools together cover the whole alphabet exactly once', () => {
-  const all = [...VOWELS, ...CONSONANTS].map((entry) => entry.value).sort();
-  assert.equal(all.length, 26);
-  assert.equal(new Set(all).size, 26);
-  assert.equal(all.join(''), 'abcdefghijklmnopqrstuvwxyz');
+test('the bag is the French Scrabble distribution without the blanks', () => {
+  assert.equal(fullBag().length, 100);
+  assert.equal(Object.keys(BAG).length, 26);
+  assert.equal(Object.keys(BAG).sort().join(''), 'abcdefghijklmnopqrstuvwxyz');
+  assert.equal(BAG.e, 15);
+  assert.equal(BAG.z, 1);
 });
 
-test('y is a vowel here, as in the tile distribution', () => {
-  assert.ok(VOWELS.some((entry) => entry.value === 'y'));
+test('the bag holds 45 vowels, which is what keeps a rack playable', () => {
+  assert.equal(countVowels(fullBag()), 45);
 });
 
-test('every weight is a positive integer', () => {
-  for (const entry of [...VOWELS, ...CONSONANTS]) {
-    assert.ok(Number.isInteger(entry.weight) && entry.weight > 0, entry.value);
+test('a rack has the requested number of letters', () => {
+  assert.equal(drawRack(createRng(1)).length, 10);
+  assert.equal(drawRack(createRng(1), 7).length, 7);
+});
+
+test('every drawn letter comes from the alphabet', () => {
+  const rack = drawRack(createRng(42));
+  assert.ok(rack.every((letter) => /^[a-z]$/.test(letter)));
+});
+
+test('drawing is without replacement: no letter exceeds its count in the bag', () => {
+  for (let seed = 0; seed < 200; seed++) {
+    const rack = drawRack(createRng(seed));
+    const seen = {};
+    for (const letter of rack) {
+      seen[letter] = (seen[letter] ?? 0) + 1;
+      assert.ok(seen[letter] <= BAG[letter], `${letter} tiré ${seen[letter]} fois`);
+    }
   }
 });
 
-test('e is the most frequent vowel and s among the most frequent consonants', () => {
-  const heaviestVowel = VOWELS.reduce((a, b) => (a.weight >= b.weight ? a : b));
-  assert.equal(heaviestVowel.value, 'e');
-  const s = CONSONANTS.find((entry) => entry.value === 's');
-  assert.equal(s.weight, 6);
+test('the same seed always draws the same rack', () => {
+  assert.deepEqual(drawRack(createRng(7)), drawRack(createRng(7)));
 });
 
-test('drawing a vowel always yields a vowel', () => {
-  const rng = createRng(42);
-  const vowels = new Set(VOWELS.map((entry) => entry.value));
-  for (let i = 0; i < 500; i++) {
-    assert.ok(vowels.has(drawLetter(rng, 'voyelle')));
+test('different seeds draw different racks', () => {
+  assert.notDeepEqual(drawRack(createRng(1)), drawRack(createRng(2)));
+});
+
+test('a rack almost always has enough vowels to be playable', () => {
+  // The point of drawing from the bag rather than at random. Over 300 racks,
+  // a rack with fewer than two vowels should be a rarity, not the rule.
+  let poor = 0;
+  for (let seed = 0; seed < 300; seed++) {
+    if (countVowels(drawRack(createRng(seed))) < 2) poor++;
   }
+  assert.ok(poor < 15, `${poor} tirages pauvres en voyelles sur 300`);
 });
 
-test('drawing a consonant always yields a consonant', () => {
-  const rng = createRng(42);
-  const consonants = new Set(CONSONANTS.map((entry) => entry.value));
-  for (let i = 0; i < 500; i++) {
-    assert.ok(consonants.has(drawLetter(rng, 'consonne')));
-  }
+test('countVowels counts y as a vowel, as the tile distribution does', () => {
+  assert.ok(VOWELS.includes('y'));
+  assert.equal(countVowels('crypte'), 2);
 });
 
-test('the same seed replays the same draw', () => {
-  const first = createRng(7);
-  const second = createRng(7);
-  const a = [drawLetter(first, 'voyelle'), drawLetter(first, 'consonne')];
-  const b = [drawLetter(second, 'voyelle'), drawLetter(second, 'consonne')];
-  assert.deepEqual(a, b);
-});
-
-test('an unknown kind is rejected loudly', () => {
-  assert.throws(() => drawLetter(createRng(1), 'jeton'), /voyelle|consonne/);
+test('asking for more tiles than the bag holds is refused', () => {
+  assert.throws(() => drawRack(createRng(1), 101), /sac/);
 });

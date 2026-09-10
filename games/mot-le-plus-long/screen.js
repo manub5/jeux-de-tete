@@ -3,7 +3,6 @@
 
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
-import { DRAW_SIZE } from './draw.js';
 import { createGame } from './game.js';
 
 export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) {
@@ -13,33 +12,31 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
     container.replaceChildren(
       element('h1', { text: 'Le mot le plus long' }),
       renderLetters(),
-      game.phase === 'tirage' ? renderDraw() : renderSearch()
+      renderSearch()
     );
   }
 
   function renderLetters() {
-    const tiles = game.letters.map((letter) =>
-      element('span', { class: 'jeton', text: letter.toUpperCase() })
+    // The rack is always complete: the program deals it, the player reads it.
+    return element(
+      'div',
+      { class: 'tirage', 'aria-label': 'Vos dix lettres' },
+      // `--rang` échelonne la chute : le reste est dans la feuille de style.
+      game.letters.map((letter, rang) =>
+        element('span', {
+          class: 'jeton',
+          style: `--rang: ${rang}`,
+          text: letter.toUpperCase(),
+        })
+      )
     );
-    const remaining = DRAW_SIZE - game.letters.length;
-    for (let i = 0; i < remaining; i++) {
-      tiles.push(element('span', { class: 'jeton jeton--vide', text: '·' }));
-    }
-    return element('div', { class: 'tirage', 'aria-label': 'Lettres tirées' }, tiles);
-  }
-
-  function renderDraw() {
-    return element('div', { class: 'actions' }, [
-      button('Voyelle', () => { game.drawLetter('voyelle'); render(); }),
-      button('Consonne', () => { game.drawLetter('consonne'); render(); }),
-    ]);
   }
 
   function renderSearch() {
     if (game.barren) {
       return element('div', {}, [
-        element('p', { text: 'Ce tirage ne donne rien d’intéressant.' }),
-        button('Refaire un tirage', newGame),
+        element('p', { text: 'Ces lettres ne donnent rien d’intéressant.' }),
+        button('D’autres lettres', newGame),
       ]);
     }
 
