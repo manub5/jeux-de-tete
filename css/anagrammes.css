@@ -1,0 +1,30 @@
+/* css/anagrammes.css */
+.niveaux {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--marge);
+}
+
+.places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--marge);
+}
+
+.place {
+  display: grid;
+  place-items: center;
+  min-width: 1.8rem;
+  padding: 0.2rem 0;
+  border-bottom: 3px solid var(--bordure);
+  color: var(--texte-faible);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.place--connue {
+  border-bottom-color: var(--accent);
+  color: var(--texte);
+}

@@ -16,6 +16,11 @@ export function playedLength(word) {
   return fold(word).length;
 }
 
+/** The letters of a draw, folded and counted. */
+function tally(letters) {
+  return countLetters(fold(letters));
+}
+
 /** Every distinct sub-multiset of the draw, as a sorted signature string. */
 function* subsetSignatures(counts, minLength) {
   const letters = [...counts.keys()].sort();
@@ -41,7 +46,7 @@ function* subsetSignatures(counts, minLength) {
 
 export function createSolver(index) {
   function findWords(letters, { minLength = 2 } = {}) {
-    const counts = countLetters(fold(letters));
+    const counts = tally(letters);
     const found = [];
     for (const key of subsetSignatures(counts, minLength)) {
       const words = index.get(key);
@@ -59,8 +64,8 @@ export function createSolver(index) {
   }
 
   function canBuildFrom(word, letters) {
-    const available = countLetters(fold(letters));
-    for (const [letter, needed] of countLetters(fold(word))) {
+    const available = tally(letters);
+    for (const [letter, needed] of tally(word)) {
       if ((available.get(letter) ?? 0) < needed) return false;
     }
     return true;

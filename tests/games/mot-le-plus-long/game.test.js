@@ -129,7 +129,7 @@ test('finishing reveals the best word and closes the game', () => {
 test('a finished game refuses further proposals', () => {
   const game = gameWithLetters('cachetsxzq'.split(''));
   game.finish();
-  assert.throws(() => game.propose('chat'), /terminée/);
+  assert.throws(() => game.propose('chat'), /over/);
 });
 
 test('a game with no proposal scores zero', () => {

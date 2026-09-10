@@ -34,11 +34,15 @@ Avant chaque `git push` qui touche un fichier du site :
       curl -sSL --fail -o "tools/sources/$f" \
         "https://codeberg.org/dicollage/dictionnaires/raw/branch/main/dictionaries/$f"
     done
+    curl -sSL --fail -o tools/sources/Lexique383.tsv \
+      "http://www.lexique.org/databases/Lexique383/Lexique383.tsv"
     .venv/bin/python -m tools.build_dictionary
     .venv/bin/python -m pytest tools/tests/ -q
 
 ## Licences
 
 Le dictionnaire dérive des dictionnaires orthographiques français de
-Dicollecte / Grammalecte, sous licence Mozilla Public License 2.0.
-Voir `data/LICENCES.txt`.
+Dicollecte / Grammalecte, sous licence Mozilla Public License 2.0. Le fichier
+de fréquences (`data/frequences.txt.gz`) dérive quant à lui de Lexique 3, sous
+licence CC BY-SA 4.0 — attribution et partage à l'identique — car les deux
+fichiers ne portent pas la même licence. Voir `data/LICENCES.txt`.

@@ -5,6 +5,8 @@ const DB_NAME = 'jeux-de-tete';
 const STORE = 'dictionary';
 const KEY = 'signatures';
 const SOURCE = 'data/signatures.txt.gz';
+const FREQUENCY_KEY = 'frequences';
+const FREQUENCY_SOURCE = 'data/frequences.txt.gz';
 
 /**
  * Bump this whenever data/signatures.txt.gz is rebuilt. The service worker's
@@ -15,12 +17,18 @@ const SOURCE = 'data/signatures.txt.gz';
  */
 export const DICTIONARY_VERSION = 1;
 
-/** Is this cached record usable as it stands? */
-export function isCurrent(record) {
+/**
+ * Bump when data/frequences.txt.gz is rebuilt, exactly as DICTIONARY_VERSION
+ * is bumped for the dictionary. The two files are cached independently.
+ */
+export const FREQUENCY_VERSION = 1;
+
+/** Is this cached record usable as it stands, for the given version? */
+export function isCurrent(record, version) {
   return (
     typeof record === 'object' &&
     record !== null &&
-    record.version === DICTIONARY_VERSION &&
+    record.version === version &&
     typeof record.text === 'string'
   );
 }
@@ -35,6 +43,20 @@ export function parseIndex(text) {
     index.set(line.slice(0, tab), line.slice(tab + 1).split(' '));
   }
   return index;
+}
+
+/** One word per line: `mot<TAB>fréquence par million`. */
+export function parseFrequencies(text) {
+  const frequencies = new Map();
+  for (const line of text.split('\n')) {
+    if (!line) continue;
+    const tab = line.indexOf('\t');
+    if (tab < 0) continue;
+    const value = Number(line.slice(tab + 1));
+    if (!Number.isFinite(value)) continue;
+    frequencies.set(line.slice(0, tab), value);
+  }
+  return frequencies;
 }
 
 function openDatabase() {
@@ -68,26 +90,43 @@ async function gunzip(response) {
   return await new Response(stream).text();
 }
 
-async function readCached() {
+async function readCached(key) {
   try {
     const db = await openDatabase();
-    return await transact(db, 'readonly', (store) => store.get(KEY));
+    return await transact(db, 'readonly', (store) => store.get(key));
   } catch (error) {
     // A private window, or storage refused: fall back to downloading.
-    console.warn('dictionnaire : lecture du cache impossible', error);
+    console.warn(`cache ${key} : lecture impossible`, error);
     return undefined;
   }
 }
 
-async function writeCached(text) {
+async function writeCached(key, record) {
   try {
     const db = await openDatabase();
-    const record = { version: DICTIONARY_VERSION, text };
-    await transact(db, 'readwrite', (store) => store.put(record, KEY));
+    await transact(db, 'readwrite', (store) => store.put(record, key));
   } catch (error) {
     // Not fatal: the game works, it will just download again next time.
-    console.warn('dictionnaire : écriture du cache impossible', error);
+    console.warn(`cache ${key} : écriture impossible`, error);
   }
+}
+
+/** Fetch once, keep in IndexedDB, hand back the text. */
+async function loadText({ key, source, version, onProgress }) {
+  onProgress('cache');
+  const cached = await readCached(key);
+  let text = isCurrent(cached, version) ? cached.text : undefined;
+
+  if (typeof text !== 'string') {
+    onProgress('téléchargement');
+    const response = await fetch(source);
+    if (!response.ok) {
+      throw new Error(`fichier indisponible (${response.status})`);
+    }
+    text = await gunzip(response);
+    await writeCached(key, { version, text });
+  }
+  return text;
 }
 
 /**
@@ -95,20 +134,17 @@ async function writeCached(text) {
  * `onProgress` is called with 'cache' | 'téléchargement' | 'lecture'.
  */
 export async function loadIndex({ onProgress = () => {} } = {}) {
-  onProgress('cache');
-  const cached = await readCached();
-  let text = isCurrent(cached) ? cached.text : undefined;
-
-  if (typeof text !== 'string') {
-    onProgress('téléchargement');
-    const response = await fetch(SOURCE);
-    if (!response.ok) {
-      throw new Error(`dictionnaire indisponible (${response.status})`);
-    }
-    text = await gunzip(response);
-    await writeCached(text);
-  }
-
+  const text = await loadText({
+    key: KEY, source: SOURCE, version: DICTIONARY_VERSION, onProgress,
+  });
   onProgress('lecture');
   return parseIndex(text);
+}
+
+export async function loadFrequencies({ onProgress = () => {} } = {}) {
+  const text = await loadText({
+    key: FREQUENCY_KEY, source: FREQUENCY_SOURCE, version: FREQUENCY_VERSION, onProgress,
+  });
+  onProgress('lecture');
+  return parseFrequencies(text);
 }

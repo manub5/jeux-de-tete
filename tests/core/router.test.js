@@ -138,3 +138,39 @@ test('a route without cleanup does not break navigation', () => {
   router.start();
   assert.doesNotThrow(() => router.go('b'));
 });
+
+test('a cleanup that throws does not trap the player on a half-torn screen', () => {
+  const seen = [];
+  const router = createRouter({
+    routes: {
+      a: () => { seen.push('a'); return () => { throw new Error('nettoyage raté'); }; },
+      b: () => { seen.push('b'); },
+    },
+    container: fakeContainer(),
+    fallback: 'a',
+    readHash: () => '',
+    writeHash: () => {},
+  });
+  router.start();
+  assert.doesNotThrow(() => router.go('b'));
+  assert.deepEqual(seen, ['a', 'b']);
+});
+
+test('a cleanup that throws does not run again on the next navigation', () => {
+  let nettoyages = 0;
+  const router = createRouter({
+    routes: {
+      a: () => () => { nettoyages += 1; throw new Error('nettoyage raté'); },
+      b: () => {},
+      c: () => {},
+    },
+    container: fakeContainer(),
+    fallback: 'a',
+    readHash: () => '',
+    writeHash: () => {},
+  });
+  router.start();
+  router.go('b');
+  router.go('c');
+  assert.equal(nettoyages, 1);
+});
