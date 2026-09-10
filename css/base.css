@@ -1,0 +1,75 @@
+/* css/base.css — design tokens and the accessibility floor (spec section 10). */
+:root {
+  --texte: #1b1b1b;
+  --fond: #fdfcf8;
+  --fond-carte: #ffffff;
+  --accent: #1f6f4a;
+  --accent-texte: #ffffff;
+  --erreur: #a32020;
+  --bordure: #d8d4c8;
+
+  --corps: 18px;           /* accessibility floor, never smaller */
+  --cible: 48px;           /* minimum touch target */
+  --rayon: 12px;
+  --marge: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --texte: #f2efe6;
+    --fond: #15171a;
+    --fond-carte: #1f2226;
+    --accent: #4fbf8b;
+    --accent-texte: #10241a;
+    --erreur: #ff8080;
+    --bordure: #343a40;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: var(--corps)/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--marge);
+}
+
+h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
+
+.bouton {
+  min-height: var(--cible);
+  min-width: var(--cible);
+  padding: 0 1.2rem;
+  border: 2px solid transparent;
+  border-radius: var(--rayon);
+  background: var(--accent);
+  color: var(--accent-texte);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bouton--discret {
+  background: transparent;
+  color: var(--texte);
+  border-color: var(--bordure);
+}
+
+.bouton:focus-visible { outline: 3px solid var(--texte); outline-offset: 2px; }
+
+/* Never colour alone: an error also carries a sign and a word. */
+.erreur { color: var(--erreur); font-weight: 600; }
+.erreur::before { content: "✕ "; }
+.succes { color: var(--accent); font-weight: 600; }
+.succes::before { content: "✓ "; }
+
+.chargement { text-align: center; padding: 3rem var(--marge); }
