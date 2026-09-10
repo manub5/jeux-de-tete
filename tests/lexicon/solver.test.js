@@ -15,7 +15,7 @@ function indexOf(...words) {
 }
 
 const solver = createSolver(
-  indexOf('chat', 'chats', 'chas', 'ta', 'as', 'sac', 'cas', 'élève', 'chien')
+  indexOf('chat', 'chats', 'chas', 'ta', 'as', 'sac', 'cas', 'élève', 'chien', 'œuf', 'feu')
 );
 
 test('finds every word buildable from the draw', () => {
@@ -73,4 +73,28 @@ test('canBuildFrom accepts a word the draw allows', () => {
 test('canBuildFrom refuses a word the draw does not allow', () => {
   assert.ok(!solver.canBuildFrom('chats', 'chat'));
   assert.ok(!solver.canBuildFrom('chien', 'chats'));
+});
+
+// A ligature is one character but two tiles. Every length this module reports
+// is a played length, so that the filter, the ordering and the score agree with
+// what the player actually laid down.
+
+test('a ligature costs the letters it is written with', () => {
+  assert.equal(solver.playedLength('œuf'), 4);
+  assert.equal(solver.playedLength('feu'), 3);
+});
+
+test('minLength counts played letters, so a ligature word clears a four floor', () => {
+  const ligature = createSolver(indexOf('œuf', 'feu'));
+  assert.deepEqual(ligature.findWords('oeuf', { minLength: 4 }), ['œuf']);
+});
+
+test('a ligature word outranks a shorter one in the results', () => {
+  const ligature = createSolver(indexOf('œuf', 'feu'));
+  assert.deepEqual(ligature.findWords('oeuf'), ['œuf', 'feu']);
+});
+
+test('bestLength reports the played length of a ligature word', () => {
+  const ligature = createSolver(indexOf('œuf', 'feu'));
+  assert.equal(ligature.bestLength('oeuf'), 4);
 });

@@ -3,7 +3,18 @@
 // the sub-multisets of the draw — at most 1024 for ten letters — and look each
 // one up. Constant work per draw, whatever the dictionary's size.
 
-import { countLetters, fold, signature } from './signature.js';
+import { countLetters, fold } from './signature.js';
+
+/**
+ * How many letters of the draw a word actually costs. Not `word.length`: the
+ * ligature in `œuf` is one character but four tiles, O E U F, and a player who
+ * spells it has used four of their ten letters. Every length this module
+ * reports is a played length, so the filter, the ordering and the score all
+ * agree with what the player physically laid down.
+ */
+export function playedLength(word) {
+  return fold(word).length;
+}
 
 /** Every distinct sub-multiset of the draw, as a sorted signature string. */
 function* subsetSignatures(counts, minLength) {
@@ -36,13 +47,15 @@ export function createSolver(index) {
       const words = index.get(key);
       if (words) found.push(...words);
     }
-    found.sort((a, b) => b.length - a.length || a.localeCompare(b, 'fr'));
+    found.sort(
+      (a, b) => playedLength(b) - playedLength(a) || a.localeCompare(b, 'fr')
+    );
     return found;
   }
 
   function bestLength(letters) {
     const found = findWords(letters);
-    return found.length === 0 ? 0 : found[0].length;
+    return found.length === 0 ? 0 : playedLength(found[0]);
   }
 
   function canBuildFrom(word, letters) {
@@ -53,9 +66,5 @@ export function createSolver(index) {
     return true;
   }
 
-  function wordsFor(word) {
-    return index.get(signature(word)) ?? [];
-  }
-
-  return { findWords, bestLength, canBuildFrom, wordsFor };
+  return { findWords, bestLength, canBuildFrom, playedLength };
 }
