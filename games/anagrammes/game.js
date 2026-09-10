@@ -38,7 +38,7 @@ export function createAnagram({ solver, lexicon, rng, frequencies, level, word }
 
     propose(input) {
       if (phase === 'terminée') {
-        throw new Error('la partie est terminée');
+        throw new Error('the game is over');
       }
       const verdict = lexicon.validate(input);
       if (!verdict.ok) {
@@ -55,7 +55,7 @@ export function createAnagram({ solver, lexicon, rng, frequencies, level, word }
     /** Reveal the next letter from the left. Returns its position. */
     hint() {
       if (phase === 'terminée') {
-        throw new Error('la partie est terminée');
+        throw new Error('the game is over');
       }
       const position = revealed.indexOf(null);
       revealed[position] = answer[position];

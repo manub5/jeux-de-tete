@@ -60,6 +60,11 @@ test('an unknown level is refused loudly', () => {
   assert.throws(() => candidates(FREQUENCES, 'impossible'), /niveau/);
 });
 
+test('a level name inherited from Object.prototype is refused, not looked up', () => {
+  assert.throws(() => candidates(FREQUENCES, 'constructor'), /niveau/);
+  assert.throws(() => candidates(FREQUENCES, 'toString'), /niveau/);
+});
+
 test('a level with no candidate is refused rather than returning nothing', () => {
   assert.throws(() => pickWord(createRng(1), new Map([['chat', 40]]), 'facile'), /aucun mot/);
 });

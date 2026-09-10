@@ -190,7 +190,7 @@ test('abandoning clears the save without revealing anything', () => {
 test('a finished game refuses further proposals', () => {
   const { jeu } = partie();
   jeu.finish();
-  assert.throws(() => jeu.propose('ton'), /terminée/);
+  assert.throws(() => jeu.propose('ton'), /over/);
 });
 
 test('nothing handed out can reach back into the game', () => {

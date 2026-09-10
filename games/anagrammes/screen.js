@@ -38,7 +38,9 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
       )
     );
 
-    const slots = element('div', { class: 'places', 'aria-label': 'Lettres dévoilées' });
+    const slots = element('div', {
+      class: 'places', 'aria-label': 'Lettres dévoilées', 'aria-live': 'polite',
+    });
     function refreshSlots() {
       slots.replaceChildren(
         ...game.revealed.map((letter) =>

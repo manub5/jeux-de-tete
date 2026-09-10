@@ -7,7 +7,7 @@
   --accent-texte: #ffffff;
   --erreur: #a32020;
   --bordure: #d8d4c8;
-  --texte-faible: #6b6b6b; /* AA against --fond-carte: 5.5:1 */
+  --texte-faible: #6b6b6b; /* AA against --fond: 5.2:1 */
 
   --corps: 18px;           /* accessibility floor, never smaller */
   --cible: 48px;           /* minimum touch target */
@@ -24,7 +24,7 @@
     --accent-texte: #10241a;
     --erreur: #ff8080;
     --bordure: #343a40;
-    --texte-faible: #9aa0a6; /* AA against --fond-carte: 6.1:1 */
+    --texte-faible: #9aa0a6; /* AA against --fond: 6.8:1 */
   }
 }
 
@@ -61,6 +61,8 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 }
 
 .bouton--discret {
+  min-height: var(--cible);
+  min-width: var(--cible);
   background: transparent;
   color: var(--texte);
   border-color: var(--bordure);

@@ -14,10 +14,10 @@ export const LEVELS = {
 
 /** Sorted, so that a given seed always picks the same word. */
 export function candidates(frequencies, level) {
-  const range = LEVELS[level];
-  if (!range) {
+  if (!Object.hasOwn(LEVELS, level)) {
     throw new Error(`niveau inconnu : ${level}`);
   }
+  const range = LEVELS[level];
   const [shortest, longest] = range;
   const found = [];
   for (const word of frequencies.keys()) {

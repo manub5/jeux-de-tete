@@ -51,7 +51,7 @@ export function createAllWords({ solver, lexicon, storage, rng, frequencies }) {
 
     propose(input) {
       if (phase === 'terminée') {
-        throw new Error('la partie est terminée');
+        throw new Error('the game is over');
       }
       // The minimum length is a rule of the game, not a fact about the
       // dictionary: check it on the raw input, before validating, so a short

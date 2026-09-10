@@ -22,6 +22,10 @@ export function baseCandidates(frequencies) {
     // like any other rack would.
     if (letters.length === RACK_SIZE) found.push(word);
   }
+  // A plain code-unit sort, not `localeCompare(a, b, 'fr')`: this order is
+  // never shown to the player, only indexed into by seed, and staying off the
+  // platform's collation is what keeps a given seed reproducible across
+  // devices.
   return found.sort();
 }
 

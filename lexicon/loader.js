@@ -96,7 +96,7 @@ async function readCached(key) {
     return await transact(db, 'readonly', (store) => store.get(key));
   } catch (error) {
     // A private window, or storage refused: fall back to downloading.
-    console.warn('dictionnaire : lecture du cache impossible', error);
+    console.warn(`cache ${key} : lecture impossible`, error);
     return undefined;
   }
 }
@@ -107,7 +107,7 @@ async function writeCached(key, record) {
     await transact(db, 'readwrite', (store) => store.put(record, key));
   } catch (error) {
     // Not fatal: the game works, it will just download again next time.
-    console.warn('dictionnaire : écriture du cache impossible', error);
+    console.warn(`cache ${key} : écriture impossible`, error);
   }
 }
 

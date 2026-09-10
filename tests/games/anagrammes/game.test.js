@@ -116,8 +116,8 @@ test('revealing every letter ends the game rather than giving it away for free',
 test('a finished game refuses proposals and hints', () => {
   const jeu = partie();
   jeu.propose('chien');
-  assert.throws(() => jeu.propose('niche'), /terminée/);
-  assert.throws(() => jeu.hint(), /terminée/);
+  assert.throws(() => jeu.propose('niche'), /over/);
+  assert.throws(() => jeu.hint(), /over/);
 });
 
 test('finishing reveals the word and says whether he found it', () => {
