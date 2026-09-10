@@ -28,7 +28,9 @@ export function createGame({ solver, lexicon, rng }) {
   const game = {
     get phase() { return phase; },
     get letters() { return [...letters]; },
-    get proposals() { return [...proposals]; },
+    // Copies, not references: nothing the screen does to what it is handed
+    // may reach back into the game's own state.
+    get proposals() { return proposals.map((entry) => ({ ...entry })); },
     get score() { return best.length; },
 
     get bestLength() {
@@ -76,13 +78,19 @@ export function createGame({ solver, lexicon, rng }) {
     },
 
     finish() {
-      phase = 'terminée';
+      // `propose` guards both its impossible phases; so does this. Finishing a
+      // draw that is not complete would skip the search phase altogether.
+      if (phase === 'tirage') {
+        throw new Error('le tirage n’est pas terminé');
+      }
       const found = solutions ?? [];
+      const bestLength = game.bestLength;
+      phase = 'terminée';
       return {
         score: best.length,
         bestWord: found.length ? found[0] : null,
-        bestLength: found.length ? solver.playedLength(found[0]) : 0,
-        found,
+        bestLength,
+        found: [...found],
       };
     },
   };

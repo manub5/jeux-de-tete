@@ -152,3 +152,39 @@ test('a game with no proposal scores zero', () => {
   const game = gameWithLetters('cachetsxzq'.split(''));
   assert.equal(game.finish().score, 0);
 });
+
+test('finishing before the draw is complete is refused', () => {
+  const { solver, lexicon } = build();
+  const game = createGame({ solver, lexicon, rng: createRng(1) });
+  assert.throws(() => game.finish(), /tirage/);
+});
+
+test('finishing twice gives the same result', () => {
+  const game = gameWithLetters('cachetsxzq'.split(''));
+  const first = game.finish();
+  assert.deepEqual(game.finish(), first);
+});
+
+test('barren stays consistent once the game is finished', () => {
+  const game = gameWithLetters('zzzzwwwwkk'.split(''));
+  assert.equal(game.barren, true);
+  game.finish();
+  assert.equal(game.barren, true);
+});
+
+// Nothing handed to the screen may reach back into the game's own state.
+
+test('emptying the revealed list does not corrupt the game', () => {
+  const game = gameWithLetters('cachetsxzq'.split(''));
+  const result = game.finish();
+  const announced = game.bestLength;
+  result.found.length = 0;
+  assert.equal(game.bestLength, announced);
+});
+
+test('the proposals list cannot be edited from outside', () => {
+  const game = gameWithLetters('cachetsxzq'.split(''));
+  game.propose('chat');
+  game.proposals[0].length = 99;
+  assert.equal(game.proposals[0].length, 4);
+});
