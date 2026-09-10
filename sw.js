@@ -4,34 +4,45 @@
 // CACHE_VERSION MUST be bumped on every deployment. Forgetting it is the
 // classic failure of this kind of app: the old files are served forever and
 // nobody understands why nothing changes.
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_PREFIX = 'jeux-de-tete-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const ASSETS = [
   './',
-  'index.html',
-  'manifest.webmanifest',
-  'main.js',
-  'css/base.css',
-  'css/mot-le-plus-long.css',
   'core/rng.js',
   'core/router.js',
   'core/stats.js',
   'core/storage.js',
   'core/ui.js',
   'core/update.js',
+  'css/anagrammes.css',
+  'css/base.css',
+  'css/mot-le-plus-long.css',
+  'css/tous-les-mots.css',
+  'data/frequences.txt.gz',
+  'data/signatures.txt.gz',
+  'games/anagrammes/game.js',
+  'games/anagrammes/pick.js',
+  'games/anagrammes/scramble.js',
+  'games/anagrammes/screen.js',
+  'games/index.js',
+  'games/mot-le-plus-long/draw.js',
+  'games/mot-le-plus-long/game.js',
+  'games/mot-le-plus-long/screen.js',
+  'games/tous-les-mots/draw.js',
+  'games/tous-les-mots/game.js',
+  'games/tous-les-mots/screen.js',
+  'icons/icone-192.png',
+  'icons/icone-512.png',
+  'icons/icone-maskable-512.png',
+  'index.html',
   'lexicon/lexicon.js',
   'lexicon/loader.js',
   'lexicon/signature.js',
   'lexicon/solver.js',
-  'games/mot-le-plus-long/draw.js',
-  'games/mot-le-plus-long/game.js',
-  'games/mot-le-plus-long/screen.js',
-  'data/signatures.txt.gz',
-  'icons/icone-192.png',
-  'icons/icone-512.png',
-  'icons/icone-maskable-512.png',
+  'main.js',
+  'manifest.webmanifest',
 ];
 
 self.addEventListener('install', (event) => {
