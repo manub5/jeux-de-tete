@@ -86,3 +86,56 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
   color: var(--accent-texte);
   font-weight: 600;
 }
+
+/* Five columns, always. Left to wrap, ten tiles break 8 + 2 on a phone, and a
+   Scrabble player reads his rack at a glance — a lopsided row costs him that.
+   Two rows of five also make each tile much larger on the same width. */
+.tirage {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: var(--marge) 0;
+  max-width: 22rem;
+}
+
+.jeton {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  border: 2px solid var(--bordure);
+  border-radius: 8px;
+  background: var(--fond-carte);
+  font-weight: 700;
+  font-size: 1.6rem;
+  /* `backwards` keeps the tile invisible before its turn: without it, all ten
+     appear at once and only then animate. */
+  animation: tombe 260ms ease-out backwards;
+  animation-delay: calc(var(--rang, 0) * 80ms);
+}
+
+@keyframes tombe {
+  from { opacity: 0; transform: translateY(-1.6rem) rotate(-4deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The system can signal that animations are unwanted. We listen. */
+@media (prefers-reduced-motion: reduce) {
+  .jeton { animation: none; }
+}
+
+.saisie {
+  width: 100%;
+  min-height: var(--cible);
+  padding: 0 0.8rem;
+  margin-bottom: var(--marge);
+  border: 2px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+  color: var(--texte);
+  font: inherit;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+}
+
+.retour { min-height: 3rem; }
+.score { font-weight: 700; }
