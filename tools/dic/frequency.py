@@ -13,8 +13,9 @@ recognises, where the literary corpus would offer words nobody has ever said.
 from __future__ import annotations
 
 import csv
-import gzip
 from pathlib import Path
+
+from tools.dic.text import write_gzip
 
 #: Occurrences per million, below which a word is too rare to set as a puzzle.
 MIN_FREQUENCY = 1.0
@@ -57,10 +58,10 @@ def keep_known(
 
 
 def write_frequencies(frequencies: dict[str, float], path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     # `.10g` and not `g`: the default six significant digits would silently
     # write 12800.8 for a word whose real frequency is 12800.81. The compact
     # form is kept — 30.0 still writes as `30`.
-    lines = (f"{word}\t{frequencies[word]:.10g}\n" for word in sorted(frequencies))
-    with gzip.open(path, "wt", encoding="utf-8", compresslevel=9) as handle:
-        handle.writelines(lines)
+    text = "".join(
+        f"{word}\t{frequencies[word]:.10g}\n" for word in sorted(frequencies)
+    )
+    write_gzip(text, path)

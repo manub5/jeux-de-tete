@@ -8,6 +8,9 @@ needs the same change there, and both test suites re-run.
 
 from __future__ import annotations
 
+import gzip
+from pathlib import Path
+
 MIN_LENGTH = 2
 MAX_LENGTH = 15
 
@@ -53,3 +56,20 @@ def is_playable(word: str) -> bool:
     if not MIN_LENGTH <= len(word) <= MAX_LENGTH:
         return False
     return all(letter in ALLOWED_LETTERS for letter in word)
+
+
+def write_gzip(text: str, path: Path) -> None:
+    """Deterministic gzip: same content in, same bytes out.
+
+    `gzip.open` stamps the build time into the header, so rebuilding an
+    unchanged dictionary would store a fresh 2 MB blob in git and make the diff
+    claim the data changed. `mtime=0` and an empty filename remove both.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with (
+        path.open("wb") as raw,
+        gzip.GzipFile(
+            filename="", mode="wb", fileobj=raw, mtime=0, compresslevel=9
+        ) as handle,
+    ):
+        handle.write(text.encode("utf-8"))
