@@ -106,6 +106,27 @@ test('a route that returns something other than a function is tolerated', () => 
   assert.doesNotThrow(() => router.go('b'));
 });
 
+test('a route that throws leaves the router able to try again', () => {
+  let attempts = 0;
+  const router = createRouter({
+    routes: {
+      accueil: () => {},
+      jeu: () => {
+        attempts += 1;
+        if (attempts === 1) throw new Error('montage raté');
+      },
+    },
+    container: fakeContainer(),
+    fallback: 'accueil',
+    readHash: () => '',
+    writeHash: () => {},
+  });
+  router.start();
+  assert.throws(() => router.go('jeu'), /montage raté/);
+  assert.doesNotThrow(() => router.go('jeu'));
+  assert.equal(attempts, 2);
+});
+
 test('a route without cleanup does not break navigation', () => {
   const router = createRouter({
     routes: { a: () => {}, b: () => {} },

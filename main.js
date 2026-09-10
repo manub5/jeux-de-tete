@@ -14,10 +14,16 @@ const container = document.querySelector('#app');
 const storage = createStorage();
 const stats = createStats(storage);
 
+/** Same defensive rule as core/stats.js: a stored value that parses but has
+ *  the wrong shape must not break the game. */
+function wordList(value) {
+  return Array.isArray(value) ? value.filter((word) => typeof word === 'string') : [];
+}
+
 function correctionsFrom(store) {
-  const saved = store.get('corrections', { accepted: [], rejected: [] });
-  const accepted = new Set(saved.accepted);
-  const rejected = new Set(saved.rejected);
+  const saved = store.get('corrections', null) ?? {};
+  const accepted = new Set(wordList(saved.accepted));
+  const rejected = new Set(wordList(saved.rejected));
   return {
     accepted,
     rejected,
@@ -39,6 +45,10 @@ function showLoading(step) {
 }
 
 function showFailure(error, retry) {
+  // The technical detail goes to the console, never to the screen: a failed
+  // fetch throws a browser-generated message in the browser's own language,
+  // and the player must not be shown English text.
+  console.error('dictionnaire indisponible', error);
   container.replaceChildren(
     element('h1', { text: 'Dictionnaire indisponible' }),
     element('p', {
@@ -46,7 +56,6 @@ function showFailure(error, retry) {
         'Le dictionnaire n’a pas pu être téléchargé. Vérifie la connexion, ' +
         'puis réessaie. Les jeux qui n’en ont pas besoin restent jouables.',
     }),
-    element('p', { class: 'erreur', text: error.message }),
     button('Réessayer', retry)
   );
 }
