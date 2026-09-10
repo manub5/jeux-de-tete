@@ -5,9 +5,12 @@ import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
 import { createAllWords } from './game.js';
 
-/** French noun/participle agreement: one "s" for anything but exactly one. */
+/**
+ * French noun/participle agreement. Zero takes the singular, like one: he opens
+ * on "0 mot sur 43", not "0 mots sur 43". The plural starts at two.
+ */
 function agree(count, word) {
-  return `${word}${count === 1 ? '' : 's'}`;
+  return `${word}${count >= 2 ? 's' : ''}`;
 }
 
 export function mountAllWords(container, { solver, lexicon, stats, storage, frequencies, onQuit }) {

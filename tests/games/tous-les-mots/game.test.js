@@ -201,3 +201,52 @@ test('nothing handed out can reach back into the game', () => {
   assert.notEqual(jeu.letters[0], 'z');
   assert.deepEqual(jeu.found, ['ton']);
 });
+
+// The 1990 spelling reform put both `croutes` and `croûtes` in the dictionary,
+// under one signature. They fold to the same letters, so `lexicon.validate`
+// answers with the same canonical word whichever he types — the second spelling
+// can never be reached. Counting it would make `total` a number he cannot get
+// to, and in this game the whole score is "x out of y".
+const VARIANTES = ['croutes', 'croûtes', 'route', 'cours'];
+
+function partieAccentuee() {
+  const index = new Map();
+  for (const mot of VARIANTES) {
+    const clef = signature(mot);
+    if (!index.has(clef)) index.set(clef, []);
+    index.get(clef).push(mot);
+  }
+  const back = backend();
+  // A saved rack, so the game takes these seven letters instead of drawing.
+  back.setItem('jp:tous-les-mots.partie', JSON.stringify({ letters: [...'croutes'], found: [] }));
+  const storage = createStorage(back);
+  return createAllWords({
+    solver: createSolver(index),
+    lexicon: createLexicon(index, { accepted: new Set(), rejected: new Set(), save() {} }),
+    storage,
+    frequencies: new Map(),
+    rng: createRng(1),
+  });
+}
+
+test('two spellings of one word count as one reachable word', () => {
+  const jeu = partieAccentuee();
+  // croutes, route, cours — not croûtes as well.
+  assert.equal(jeu.total, 3);
+});
+
+test('either spelling is accepted, and neither can be found twice', () => {
+  const jeu = partieAccentuee();
+  assert.equal(jeu.propose('croûtes').ok, true);
+  assert.equal(jeu.propose('croutes').reason, 'déjà');
+  assert.equal(jeu.found.length, 1);
+});
+
+test('finding every reachable word leaves nothing missed', () => {
+  const jeu = partieAccentuee();
+  for (const mot of ['croûtes', 'route', 'cours']) jeu.propose(mot);
+  const resultat = jeu.finish();
+  assert.equal(resultat.found, 3);
+  assert.equal(resultat.total, 3);
+  assert.deepEqual(resultat.missed, []);
+});

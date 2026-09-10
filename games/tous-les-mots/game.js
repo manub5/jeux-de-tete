@@ -24,10 +24,36 @@ function asSaved(raw) {
   return rackOk ? { letters, found } : null;
 }
 
+/**
+ * The words he can actually reach, one entry per spelling he could type.
+ *
+ * The dictionary carries both spellings of the 1990 reform — `apparaitre` and
+ * `apparaître` are two entries under one signature — but they fold to the same
+ * letters, so `lexicon.validate` answers with the same canonical word whichever
+ * he types. Counting both would put 30 053 of the dictionary's 436 103 words
+ * permanently out of reach, and in this game that is not a detail: the whole
+ * score is "x out of y", and y has to be a number he can actually get to.
+ *
+ * Each candidate is passed through `validate` rather than merely folded, so the
+ * spelling kept here is exactly the one `propose` will match against.
+ */
+function reachableWords(words, lexicon) {
+  const kept = new Map();
+  for (const word of words) {
+    const verdict = lexicon.validate(word);
+    const canonical = verdict.ok ? verdict.word : word;
+    if (!kept.has(canonical)) kept.set(canonical, canonical);
+  }
+  return [...kept.values()];
+}
+
 export function createAllWords({ solver, lexicon, storage, rng, frequencies }) {
   const saved = asSaved(storage.get(SAVE_KEY, null));
   const letters = saved ? saved.letters : pickRack(rng, frequencies, solver).letters;
-  const solutions = solver.findWords(letters.join(''), { minLength: MIN_WORD_LENGTH });
+  const solutions = reachableWords(
+    solver.findWords(letters.join(''), { minLength: MIN_WORD_LENGTH }),
+    lexicon
+  );
   // Filtered against `solutions`, not taken as-is: if the shipped dictionary
   // ever changes under a saved game, a word he legitimately found but that is
   // no longer indexed silently drops out of his list and his count falls.
