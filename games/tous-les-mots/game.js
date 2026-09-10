@@ -4,22 +4,37 @@
 // are written down after every move, so he can put the phone down mid-game and
 // pick it up days later.
 
-import { MIN_WORD_LENGTH, pickRack } from './draw.js';
+import { MIN_WORD_LENGTH, RACK_SIZE, pickRack } from './draw.js';
 
 export const SAVE_KEY = 'tous-les-mots.partie';
 
-/** A stored game that parses but has the wrong shape must not break anything. */
+/**
+ * A stored game that parses but has the wrong shape must not break anything —
+ * every field read back from storage is normalised on its own, the way
+ * `asHistory`/`asStreak` do in core/stats.js. A rack is only usable if it has
+ * exactly RACK_SIZE tiles, each a single character: anything else — too few
+ * tiles, too many, or a tile like 'ab' that would render as more than one —
+ * reads as no saved game at all, and a fresh rack is dealt instead.
+ */
 function asSaved(raw) {
   if (typeof raw !== 'object' || raw === null) return null;
   const letters = Array.isArray(raw.letters) ? raw.letters.filter((l) => typeof l === 'string') : [];
   const found = Array.isArray(raw.found) ? raw.found.filter((w) => typeof w === 'string') : [];
-  return letters.length ? { letters, found } : null;
+  const rackOk = letters.length === RACK_SIZE && letters.every((tile) => tile.length === 1);
+  return rackOk ? { letters, found } : null;
 }
 
 export function createAllWords({ solver, lexicon, storage, rng, frequencies }) {
   const saved = asSaved(storage.get(SAVE_KEY, null));
   const letters = saved ? saved.letters : pickRack(rng, frequencies, solver).letters;
   const solutions = solver.findWords(letters.join(''), { minLength: MIN_WORD_LENGTH });
+  // Filtered against `solutions`, not taken as-is: if the shipped dictionary
+  // ever changes under a saved game, a word he legitimately found but that is
+  // no longer indexed silently drops out of his list and his count falls.
+  // That cost is accepted because the filter protects two real invariants —
+  // without it, `found` could hold a word absent from `solutions`, sending
+  // `indexOf` to -1 in the sort below in `propose`, and `found.length` could
+  // exceed `total`.
   const found = saved ? solutions.filter((word) => saved.found.includes(word)) : [];
   let phase = 'recherche';
 

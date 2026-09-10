@@ -131,6 +131,41 @@ test('a saved game of the wrong shape is ignored rather than crashing', () => {
   assert.equal(jeu.letters.length, 7);
 });
 
+test('a saved rack with the wrong number of tiles is ignored rather than reaching the screen', () => {
+  const back = backend();
+  back.setItem(
+    'jp:tous-les-mots.partie',
+    JSON.stringify({ letters: ['c', 'a', 'r'], found: [] })
+  );
+  const store = createStorage(back);
+  const jeu = createAllWords({ ...build(store), rng: createRng(1) });
+  assert.equal(jeu.letters.length, 7);
+});
+
+test('a saved rack with a multi-character tile is ignored rather than reaching the screen', () => {
+  const back = backend();
+  back.setItem(
+    'jp:tous-les-mots.partie',
+    JSON.stringify({ letters: ['ab', 'c', 'a', 'r', 't', 'o', 'n'], found: [] })
+  );
+  const store = createStorage(back);
+  const jeu = createAllWords({ ...build(store), rng: createRng(1) });
+  assert.equal(jeu.letters.length, 7);
+  assert.ok(jeu.letters.every((tile) => tile.length === 1));
+});
+
+test('a freshly dealt rack is saved immediately, before any word is found', () => {
+  // He can be dealt seven letters, close the app before finding a single
+  // word, and come back days later — the save at construction is what makes
+  // that possible.
+  const store = createStorage(backend());
+  createAllWords({ ...build(store), rng: createRng(1) });
+  const sauvegarde = store.get('tous-les-mots.partie', null);
+  assert.ok(sauvegarde);
+  assert.equal(sauvegarde.letters.length, 7);
+  assert.deepEqual(sauvegarde.found, []);
+});
+
 test('finishing reveals what he missed and clears the save', () => {
   const store = createStorage(backend());
   const { jeu } = partie(store);
