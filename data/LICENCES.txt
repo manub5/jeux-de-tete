@@ -1,4 +1,16 @@
+signatures.txt.gz
+-----------------
 Dictionnaire dérivé des dictionnaires orthographiques français de Dicollecte /
 Grammalecte, distribués sous licence Mozilla Public License 2.0.
 Source : https://codeberg.org/dicollage/dictionnaires
 Le texte de la licence est disponible sur https://mozilla.org/MPL/2.0/
+
+frequences.txt.gz
+-----------------
+Fréquences dérivées de Lexique 3.83 (Boris New et Christophe Pallier),
+distribué sous licence Creative Commons Attribution - Partage dans les Mêmes
+Conditions 4.0 International (CC BY-SA 4.0).
+Source : http://www.lexique.org/
+Ce fichier dérivé est donc lui aussi sous CC BY-SA 4.0. Cette obligation porte
+sur le fichier de données, pas sur le code de l'application.
+Le texte de la licence : https://creativecommons.org/licenses/by-sa/4.0/deed.fr
