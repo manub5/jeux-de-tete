@@ -63,7 +63,7 @@ function showFailure(error, retry) {
 function home(target, { stats: gameStats }) {
   const record = gameStats.read('mot-le-plus-long');
   target.append(
-    element('h1', { text: 'Les jeux de papa' }),
+    element('h1', { text: 'Jeux de tête' }),
     button('Le mot le plus long', () => router.go('mot-le-plus-long')),
     element('p', {
       text: record.played

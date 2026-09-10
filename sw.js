@@ -5,7 +5,7 @@
 // classic failure of this kind of app: the old files are served forever and
 // nobody understands why nothing changes.
 const CACHE_VERSION = 'v1';
-const CACHE_PREFIX = 'jeux-papa-';
+const CACHE_PREFIX = 'jeux-de-tete-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const ASSETS = [

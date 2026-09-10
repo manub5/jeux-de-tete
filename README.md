@@ -1,4 +1,4 @@
-# Les jeux de papa
+# Jeux de tête
 
 Sept jeux hors ligne pour téléphone Android : jeux de mots, sudoku, mémoire.
 Application web installable, sans serveur, sans compte, sans publicité.

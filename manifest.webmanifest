@@ -1,6 +1,6 @@
 {
-  "name": "Les jeux de papa",
-  "short_name": "Jeux de papa",
+  "name": "Jeux de tête",
+  "short_name": "Jeux de tête",
   "description": "Jeux de mots, sudoku et mémoire, hors ligne",
   "lang": "fr",
   "start_url": "./",

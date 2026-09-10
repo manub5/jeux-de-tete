@@ -1,7 +1,7 @@
 // lexicon/loader.js
 // Fetch the dictionary once, keep it in IndexedDB, parse it at every start.
 
-const DB_NAME = 'jeux-papa';
+const DB_NAME = 'jeux-de-tete';
 const STORE = 'dictionary';
 const KEY = 'signatures';
 const SOURCE = 'data/signatures.txt.gz';
