@@ -19,9 +19,22 @@
   background: var(--fond-carte);
   font-weight: 700;
   font-size: 1.6rem;
+  /* `backwards` garde le jeton invisible avant son tour : sans lui, les dix
+     apparaissent d'un coup puis s'animent. */
+  animation: tombe 260ms ease-out backwards;
+  animation-delay: calc(var(--rang, 0) * 80ms);
 }
 
-.jeton--vide { color: var(--texte-faible); }
+@keyframes tombe {
+  from { opacity: 0; transform: translateY(-1.6rem) rotate(-4deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Le système peut signaler que les animations gênent. On l'écoute. */
+@media (prefers-reduced-motion: reduce) {
+  .jeton { animation: none; }
+}
+
 
 .actions { display: flex; gap: var(--marge); }
 .actions .bouton { flex: 1; }
