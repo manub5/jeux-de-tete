@@ -1,4 +1,3 @@
-// tests/games/mot-le-plus-long/game.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRng } from '../../../core/rng.js';
@@ -6,6 +5,7 @@ import { createSolver } from '../../../lexicon/solver.js';
 import { createLexicon } from '../../../lexicon/lexicon.js';
 import { signature } from '../../../lexicon/signature.js';
 import { createGame } from '../../../games/mot-le-plus-long/game.js';
+import { DRAW_SIZE } from '../../../games/mot-le-plus-long/draw.js';
 
 const WORDS = ['as', 'sac', 'cas', 'chat', 'chats', 'chas', 'ta', 'sachet', 'cachets', 'chien', 'œuf'];
 
@@ -21,53 +21,53 @@ function build() {
   return { solver, lexicon };
 }
 
-/** A game whose draw is forced, so the rules can be tested in isolation. */
+/** A game whose rack is forced, so the rules can be tested in isolation. */
 function gameWithLetters(letters) {
   const { solver, lexicon } = build();
-  const game = createGame({ solver, lexicon, rng: createRng(1) });
-  for (const letter of letters) game.setLetter(letter);
-  return game;
+  return createGame({ solver, lexicon, rng: createRng(1), letters });
 }
 
-test('a new game starts in the drawing phase with no letters', () => {
-  const { solver, lexicon } = build();
-  const game = createGame({ solver, lexicon, rng: createRng(1) });
-  assert.equal(game.phase, 'tirage');
-  assert.deepEqual(game.letters, []);
-});
+// The program draws the rack; the player looks for the longest word in it.
 
-test('drawing ten letters moves the game to the search phase', () => {
+test('a new game already holds its rack and is waiting for words', () => {
   const { solver, lexicon } = build();
   const game = createGame({ solver, lexicon, rng: createRng(1) });
-  for (let i = 0; i < 10; i++) game.drawLetter(i % 2 ? 'consonne' : 'voyelle');
-  assert.equal(game.letters.length, 10);
   assert.equal(game.phase, 'recherche');
+  assert.equal(game.letters.length, DRAW_SIZE);
 });
 
-test('an eleventh letter cannot be drawn', () => {
+test('the rack is drawn from the bag, never from the player', () => {
   const { solver, lexicon } = build();
   const game = createGame({ solver, lexicon, rng: createRng(1) });
-  for (let i = 0; i < 10; i++) game.drawLetter('voyelle');
-  assert.throws(() => game.drawLetter('voyelle'), /complet/);
+  assert.ok(game.letters.every((letter) => /^[a-z]$/.test(letter)));
+  assert.equal(typeof game.drawLetter, 'undefined');
+  assert.equal(typeof game.setLetter, 'undefined');
 });
 
-test('the best length is announced once the draw is complete', () => {
-  const game = gameWithLetters('cachetsxz'.split('').concat('q'));
+test('the same seed deals the same rack', () => {
+  const { solver, lexicon } = build();
+  const first = createGame({ solver, lexicon, rng: createRng(99) });
+  const second = createGame({ solver, lexicon, rng: createRng(99) });
+  assert.deepEqual(second.letters, first.letters);
+});
+
+test('the best length is announced', () => {
+  const game = gameWithLetters('cachetsxzq'.split(''));
   assert.equal(game.bestLength, 7); // cachets
 });
 
 test('the best word itself is never exposed before the end', () => {
-  const game = gameWithLetters('cachetsxz'.split('').concat('q'));
+  const game = gameWithLetters('cachetsxzq'.split(''));
   assert.equal(game.bestWord, undefined);
 });
 
-test('a barren draw is flagged', () => {
+test('a barren rack is flagged', () => {
   const game = gameWithLetters('zzzzwwwwkk'.split(''));
   assert.equal(game.barren, true);
   assert.equal(game.bestLength, 0);
 });
 
-test('a rich draw is not flagged as barren', () => {
+test('a rich rack is not flagged as barren', () => {
   const game = gameWithLetters('cachetsxzq'.split(''));
   assert.equal(game.barren, false);
 });
@@ -81,9 +81,9 @@ test('a valid proposal is accepted and recorded', () => {
   assert.equal(game.score, 4);
 });
 
-test('a word using a letter that was not drawn is refused', () => {
+test('a word using a letter that was not dealt is refused', () => {
   const game = gameWithLetters('cachetsxzq'.split(''));
-  // `chien` is in the dictionary but needs an i and an n, neither drawn.
+  // `chien` is in the dictionary but needs an i and an n, neither dealt.
   const result = game.propose('chien');
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'lettres');
@@ -115,12 +115,6 @@ test('the same word proposed twice is recorded once', () => {
   assert.equal(game.proposals.length, 1);
 });
 
-test('proposing before the draw is complete is refused', () => {
-  const { solver, lexicon } = build();
-  const game = createGame({ solver, lexicon, rng: createRng(1) });
-  assert.throws(() => game.propose('chat'), /tirage/);
-});
-
 test('finishing reveals the best word and closes the game', () => {
   const game = gameWithLetters('cachetsxzq'.split(''));
   game.propose('chat');
@@ -138,7 +132,12 @@ test('a finished game refuses further proposals', () => {
   assert.throws(() => game.propose('chat'), /terminée/);
 });
 
-test('a ligature costs the letters it takes from the draw', () => {
+test('a game with no proposal scores zero', () => {
+  const game = gameWithLetters('cachetsxzq'.split(''));
+  assert.equal(game.finish().score, 0);
+});
+
+test('a ligature costs the letters it takes from the rack', () => {
   // `œuf` is three characters but four tiles: O E U F. The player used four of
   // their ten letters, so it must score four.
   const game = gameWithLetters('oeufxzqvwk'.split(''));
@@ -146,17 +145,6 @@ test('a ligature costs the letters it takes from the draw', () => {
   assert.equal(result.ok, true);
   assert.equal(result.length, 4);
   assert.equal(game.score, 4);
-});
-
-test('a game with no proposal scores zero', () => {
-  const game = gameWithLetters('cachetsxzq'.split(''));
-  assert.equal(game.finish().score, 0);
-});
-
-test('finishing before the draw is complete is refused', () => {
-  const { solver, lexicon } = build();
-  const game = createGame({ solver, lexicon, rng: createRng(1) });
-  assert.throws(() => game.finish(), /tirage/);
 });
 
 test('finishing twice gives the same result', () => {
@@ -187,4 +175,10 @@ test('the proposals list cannot be edited from outside', () => {
   game.propose('chat');
   game.proposals[0].length = 99;
   assert.equal(game.proposals[0].length, 4);
+});
+
+test('the rack cannot be edited from outside', () => {
+  const game = gameWithLetters('cachetsxzq'.split(''));
+  game.letters[0] = 'z';
+  assert.equal(game.letters[0], 'c');
 });

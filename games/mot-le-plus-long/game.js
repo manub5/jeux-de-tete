@@ -1,61 +1,44 @@
-// games/mot-le-plus-long/game.js
-// All the rules, no DOM. The difficulty lever of this game is announcing the
-// best length without the word (spec section 6.1): the player knows something
-// is left to find, and is given nothing.
+// All the rules, no DOM.
+//
+// The program draws the rack; the player looks for the longest word in it.
+// The difficulty lever is announcing the best length without the word (spec
+// section 6.1): the player knows something is left to find, and is given
+// nothing.
 
-import { DRAW_SIZE, MIN_INTERESTING_LENGTH, drawLetter } from './draw.js';
+import { DRAW_SIZE, MIN_INTERESTING_LENGTH, drawRack } from './draw.js';
 
-export function createGame({ solver, lexicon, rng }) {
-  const letters = [];
+/**
+ * `letters` is only for tests and for replaying a saved rack. Left out, the
+ * rack is drawn from the bag straight away — the game starts with its ten
+ * tiles already on the table.
+ */
+export function createGame({ solver, lexicon, rng, letters }) {
+  const rack = letters ? [...letters] : drawRack(rng, DRAW_SIZE);
+  const solutions = solver.findWords(rack.join(''), { minLength: 2 });
   const proposals = [];
-  let phase = 'tirage';
-  let solutions = null;
+  let phase = 'recherche';
   let best = { word: null, length: 0 };
-
-  function completeDraw() {
-    phase = 'recherche';
-    solutions = solver.findWords(letters.join(''), { minLength: 2 });
-  }
-
-  function addLetter(letter) {
-    if (letters.length >= DRAW_SIZE) {
-      throw new Error('le tirage est déjà complet');
-    }
-    letters.push(letter);
-    if (letters.length === DRAW_SIZE) completeDraw();
-  }
 
   const game = {
     get phase() { return phase; },
-    get letters() { return [...letters]; },
+    get letters() { return [...rack]; },
     // Copies, not references: nothing the screen does to what it is handed
     // may reach back into the game's own state.
     get proposals() { return proposals.map((entry) => ({ ...entry })); },
     get score() { return best.length; },
 
     get bestLength() {
-      if (!solutions || solutions.length === 0) return 0;
+      if (solutions.length === 0) return 0;
       // Played length, like every other length the player is shown.
       return solver.playedLength(solutions[0]);
     },
 
+    /** Nothing worth finding in this rack: offer another one. */
     get barren() {
-      return phase !== 'tirage' && game.bestLength < MIN_INTERESTING_LENGTH;
-    },
-
-    drawLetter(kind) {
-      addLetter(drawLetter(rng, kind));
-    },
-
-    /** Only for tests and for replaying a saved draw. */
-    setLetter(letter) {
-      addLetter(letter);
+      return game.bestLength < MIN_INTERESTING_LENGTH;
     },
 
     propose(input) {
-      if (phase === 'tirage') {
-        throw new Error('le tirage n’est pas terminé');
-      }
       if (phase === 'terminée') {
         throw new Error('la partie est terminée');
       }
@@ -63,7 +46,7 @@ export function createGame({ solver, lexicon, rng }) {
       if (!verdict.ok) {
         return { ok: false, word: null, length: 0, reason: verdict.reason, improved: false };
       }
-      if (!solver.canBuildFrom(verdict.word, letters.join(''))) {
+      if (!solver.canBuildFrom(verdict.word, rack.join(''))) {
         return { ok: false, word: verdict.word, length: 0, reason: 'lettres', improved: false };
       }
       // Played length, never `word.length`: `œuf` costs four of the ten letters.
@@ -78,19 +61,15 @@ export function createGame({ solver, lexicon, rng }) {
     },
 
     finish() {
-      // `propose` guards both its impossible phases; so does this. Finishing a
-      // draw that is not complete would skip the search phase altogether.
-      if (phase === 'tirage') {
-        throw new Error('le tirage n’est pas terminé');
-      }
-      const found = solutions ?? [];
       const bestLength = game.bestLength;
       phase = 'terminée';
       return {
         score: best.length,
-        bestWord: found.length ? found[0] : null,
+        bestWord: solutions.length ? solutions[0] : null,
         bestLength,
-        found: [...found],
+        // A copy: `bestLength` and `barren` still read the internal array, and
+        // the screen is free to sort or trim what it is handed.
+        found: [...solutions],
       };
     },
   };

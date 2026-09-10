@@ -1,35 +1,45 @@
-// Two pools, drawn with replacement. Weights follow the French Scrabble tile
-// distribution (102 tiles, the 2 blanks left out): a familiar, defensible
-// picture of how often each letter turns up in French.
-
-import { pickWeighted } from '../../core/rng.js';
+// The rack is drawn from the French Scrabble bag: 100 lettered tiles, the two
+// blanks left out, taken without replacement. That is exactly what the player
+// does at the board, and the bag's own composition — 45 vowels out of 100 —
+// hands out three to five vowels on its own. Ten independent draws would not:
+// they regularly produce something like ZZWKQXBVFG, which is not a game.
 
 export const DRAW_SIZE = 10;
 
-/** Below this, the draw is barren and the player is offered another one. */
+/** Below this, the rack is barren and the player is offered another one. */
 export const MIN_INTERESTING_LENGTH = 4;
 
-export const VOWELS = [
-  { value: 'a', weight: 9 },
-  { value: 'e', weight: 15 },
-  { value: 'i', weight: 8 },
-  { value: 'o', weight: 6 },
-  { value: 'u', weight: 6 },
-  { value: 'y', weight: 1 },
-];
+/** The French Scrabble distribution, blanks excluded. 100 tiles. */
+export const BAG = {
+  a: 9, b: 2, c: 2, d: 3, e: 15, f: 2, g: 2, h: 2, i: 8, j: 1,
+  k: 1, l: 5, m: 3, n: 6, o: 6, p: 2, q: 1, r: 6, s: 6, t: 6,
+  u: 6, v: 2, w: 1, x: 1, y: 1, z: 1,
+};
 
-export const CONSONANTS = [
-  { value: 'b', weight: 2 }, { value: 'c', weight: 2 }, { value: 'd', weight: 3 },
-  { value: 'f', weight: 2 }, { value: 'g', weight: 2 }, { value: 'h', weight: 2 },
-  { value: 'j', weight: 1 }, { value: 'k', weight: 1 }, { value: 'l', weight: 5 },
-  { value: 'm', weight: 3 }, { value: 'n', weight: 6 }, { value: 'p', weight: 2 },
-  { value: 'q', weight: 1 }, { value: 'r', weight: 6 }, { value: 's', weight: 6 },
-  { value: 't', weight: 6 }, { value: 'v', weight: 2 }, { value: 'w', weight: 1 },
-  { value: 'x', weight: 1 }, { value: 'z', weight: 1 },
-];
+export const VOWELS = 'aeiouy';
 
-export function drawLetter(rng, kind) {
-  if (kind === 'voyelle') return pickWeighted(rng, VOWELS);
-  if (kind === 'consonne') return pickWeighted(rng, CONSONANTS);
-  throw new Error(`tirage inconnu : ${kind} (attendu voyelle ou consonne)`);
+/** One entry per tile, ready to be drawn from. */
+export function fullBag() {
+  const tiles = [];
+  for (const [letter, count] of Object.entries(BAG)) {
+    for (let i = 0; i < count; i++) tiles.push(letter);
+  }
+  return tiles;
+}
+
+/** Draw tiles without replacement. The same seed always draws the same rack. */
+export function drawRack(rng, size = DRAW_SIZE) {
+  const tiles = fullBag();
+  if (size > tiles.length) {
+    throw new Error(`le sac ne contient que ${tiles.length} jetons`);
+  }
+  const rack = [];
+  for (let i = 0; i < size; i++) {
+    rack.push(tiles.splice(Math.floor(rng() * tiles.length), 1)[0]);
+  }
+  return rack;
+}
+
+export function countVowels(letters) {
+  return [...letters].filter((letter) => VOWELS.includes(letter)).length;
 }

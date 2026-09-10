@@ -21,7 +21,6 @@
   font-size: 1.6rem;
 }
 
-.jeton--vide { color: var(--texte-faible); }
 
 .actions { display: flex; gap: var(--marge); }
 .actions .bouton { flex: 1; }
