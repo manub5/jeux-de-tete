@@ -25,6 +25,16 @@ test('the scramble is never the word itself', () => {
   }
 });
 
+test('a shuffle that lands on the word itself is retried', () => {
+  // Two letters have exactly two arrangements, so roughly half the shuffles
+  // collide with the word and the retry fires for real. On a six-letter word
+  // the first shuffle practically never collides, so that test — useful as it
+  // is — never exercises this path.
+  for (let seed = 0; seed < 100; seed++) {
+    assert.equal(scramble(createRng(seed), 'os').join(''), 'so');
+  }
+});
+
 test('the same seed scrambles the same way', () => {
   assert.deepEqual(scramble(createRng(7), 'maison'), scramble(createRng(7), 'maison'));
 });
