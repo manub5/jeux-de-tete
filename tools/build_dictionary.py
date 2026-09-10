@@ -2,7 +2,7 @@
 """Build the game dictionary from the Dicollecte Hunspell files.
 
 Usage:
-    python3 tools/build_dictionary.py \
+    python3 -m tools.build_dictionary \
         --sources tools/sources --out data --variant fr-toutesvariantes
 
 Source: Dicollecte / Grammalecte French Hunspell dictionaries, MPL 2.0.
