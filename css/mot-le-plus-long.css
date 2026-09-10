@@ -1,0 +1,44 @@
+/* css/mot-le-plus-long.css */
+.tirage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--marge) 0;
+}
+
+.jeton {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.6rem;
+  border: 2px solid var(--bordure);
+  border-radius: 6px;
+  background: var(--fond-carte);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.jeton--vide { color: var(--bordure); }
+
+.actions { display: flex; gap: var(--marge); }
+.actions .bouton { flex: 1; }
+
+.saisie {
+  width: 100%;
+  min-height: var(--cible);
+  padding: 0 0.8rem;
+  margin-bottom: var(--marge);
+  border: 2px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+  color: var(--texte);
+  font: inherit;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+}
+
+.objectif { font-weight: 600; }
+.retour { min-height: 3rem; }
+.retour .bouton { margin-left: 0.5rem; }
+.score { font-weight: 700; }
+.propositions { padding-left: 1.2rem; }
