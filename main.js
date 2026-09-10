@@ -97,3 +97,15 @@ async function start() {
 }
 
 start();
+
+import { registerServiceWorker } from './core/update.js';
+
+function showUpdateBanner(apply) {
+  const banner = element('div', { class: 'bandeau', role: 'status' }, [
+    element('span', { text: 'Une nouvelle version est prête.' }),
+    button('Recharger', apply),
+  ]);
+  document.body.prepend(banner);
+}
+
+registerServiceWorker(showUpdateBanner);

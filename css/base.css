@@ -75,3 +75,14 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 .succes::before { content: "✓ "; }
 
 .chargement { text-align: center; padding: 3rem var(--marge); }
+
+.bandeau {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--marge);
+  padding: 12px var(--marge);
+  background: var(--accent);
+  color: var(--accent-texte);
+  font-weight: 600;
+}
