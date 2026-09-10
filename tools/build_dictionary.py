@@ -126,8 +126,8 @@ def main(argv: list[str]) -> int:
         size = frequency_target.stat().st_size / 1_000
         print(f"  {len(known)} mots fréquents, {size:.0f} ko compressés")
     else:
-        # Pas fatal : seuls les anagrammes et Motus en ont besoin, et le
-        # dictionnaire lui-même est déjà écrit.
+        # Not fatal: only the anagrams and Motus need this file, and the
+        # dictionary itself is already on disk by now.
         print(f"{args.lexique} absent : fréquences non produites", file=sys.stderr)
 
     (args.out / "LICENCES.txt").write_text(LICENCE_NOTICE, encoding="utf-8")
