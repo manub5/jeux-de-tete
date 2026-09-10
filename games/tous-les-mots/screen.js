@@ -60,6 +60,10 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
       abandonButton.textContent = 'Confirmer l’abandon';
     }, { className: 'bouton bouton--discret' });
 
+    // The armed button must never survive another action. That holds today
+    // because every control staying on this screen goes through `submit()`, and
+    // every control leaving it tears the button down with the DOM. Any new
+    // in-place control has to call this too.
     function resetAbandon() {
       if (!abandonConfirm) return;
       abandonConfirm = false;
@@ -115,9 +119,12 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
       ? element('p', { text: 'Vous les avez tous trouvés.' })
       : element('details', {}, [
           element('summary', {
+            // French takes the article or the numeral, never both: "le 1 mot
+            // manqué" is not a sentence anyone writes.
             text:
-              `Voir ${result.missed.length === 1 ? 'le' : 'les'} ${result.missed.length} ` +
-              `${agree(result.missed.length, 'mot')} ${agree(result.missed.length, 'manqué')}`,
+              result.missed.length === 1
+                ? 'Voir le mot manqué'
+                : `Voir les ${result.missed.length} mots manqués`,
           }),
           element('p', { class: 'manques', text: result.missed.join(', ') }),
         ]);
