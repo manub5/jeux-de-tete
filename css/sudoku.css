@@ -2,7 +2,29 @@
 
 /* Every class here is prefixed with the game's name. All stylesheets are linked
    globally, so an unprefixed class silently overrides another game's — and the
-   later sheet wins. Anything genuinely shared belongs in base.css. */
+   later sheet wins. Anything genuinely shared belongs in base.css. Custom
+   properties are just as global as classes, so this one is prefixed too. */
+
+/* Text colour for a conflicting cell. Deliberately its own token rather than
+   --accent-texte: that variable exists to pair with --accent (a button's
+   background), not with --erreur, and the two are free to move independently
+   in a future palette revision. Reusing it here would make this pairing's
+   contrast an accident of --accent's current values instead of something
+   anyone chose. Same idiom as css/motus.css, ratios computed with the WCAG
+   relative-luminance formula:
+   light: #ffffff on --erreur light #a32020 -> 7.54:1
+   dark:  #10241a on --erreur dark  #ff8080 -> 6.71:1
+   Both colours match what --accent-texte already held in each theme, so this
+   is a decoupling, not a visual change. */
+:root {
+  --case-sudoku-conflit-texte: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --case-sudoku-conflit-texte: #10241a;
+  }
+}
 
 .grille-sudoku {
   display: grid;
@@ -23,6 +45,7 @@
 .case-sudoku {
   display: grid;
   place-items: center;
+  position: relative;
   padding: 0;
   min-width: 0;
   min-height: 0;
@@ -36,7 +59,21 @@
 
 .case-sudoku--indice { color: var(--texte); font-weight: 700; }
 .case-sudoku--choisie { outline: 3px solid var(--accent); outline-offset: -3px; }
-.case-sudoku--conflit { background: var(--erreur); color: var(--accent-texte); }
+.case-sudoku--conflit { background: var(--erreur); color: var(--case-sudoku-conflit-texte); }
+
+/* Colour is never the only signal for a conflict: a small corner mark,
+   inherited to the same contrast-checked colour as the digit above. Absolute
+   and sized well under the 39 px cell, so it never displaces the digit or
+   changes the cell's size (spec, § 7). */
+.case-sudoku--conflit::after {
+  content: '✕';
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: currentColor;
+}
 
 /* Every third column and row carries the block boundary. */
 .case-sudoku:nth-child(3n) { border-right: 2px solid var(--texte); }
