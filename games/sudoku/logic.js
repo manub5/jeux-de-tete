@@ -199,6 +199,14 @@ export function logicalSolve(grid, maxLevel) {
   for (;;) {
     // A cell with no candidate and no digit: the grid contradicts itself, and
     // no amount of technique will fix that.
+    //
+    // Removing this leaves all the tests green, and no test will ever kill it:
+    // it is an *equivalent mutant*, not an untested guard. Every pass either
+    // places a digit or strikes a candidate, so the sum of the candidate bits
+    // strictly decreases and the loop ends anyway — on the same
+    // `{ solved: false }`, since a cell with no candidate can never be filled.
+    // This is an early exit, bought for the cost of one sweep, not a safety
+    // net. Do not write a test for it: there is nothing to observe.
     for (let cell = 0; cell < SIZE; cell++) {
       if (!working[cell] && table[cell] === 0) return { solved: false, hardest };
     }
@@ -210,6 +218,7 @@ export function logicalSolve(grid, maxLevel) {
 
     if (maxLevel < LEVELS.pairs) {
       const solved = working.every((value) => value !== 0);
+      // See the note on the other `conflictsIn` net, at the end of the loop.
       return { solved: solved && conflictsIn(working).size === 0, hardest };
     }
 
@@ -229,6 +238,20 @@ export function logicalSolve(grid, maxLevel) {
     // Completeness is not correctness: a technique that went wrong could fill
     // every cell with a grid that breaks the rules. Cheap to check, and it
     // guards the eliminations above.
+    //
+    // Taking this net away — here or in the early return above — leaves every
+    // test green, and that is expected: `apply` keeps the candidate table
+    // exactly in step with the grid, so a digit is only ever placed where it
+    // has no peer holding it, and a filled grid is a legal grid. Nothing can
+    // reach this net while that invariant holds, so no test can kill it.
+    //
+    // It stays, and it stays on purpose. This is deliberate redundancy, the
+    // same shape as the three guards around the end-of-grid timer in
+    // games/sudoku/screen.js: the invariant it leans on is a proof about code
+    // that will be edited by someone who has not read that proof, and the
+    // whole generator rests on `solved` telling the truth — a false "solved"
+    // digs a puzzle that cannot be finished, and hands it to him.
+    // Do not delete it on the grounds that no test goes red.
     return { solved: solved && conflictsIn(working).size === 0, hardest };
   }
 }
