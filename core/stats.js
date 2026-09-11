@@ -56,10 +56,24 @@ export function createStats(storage) {
     };
   }
 
-  function record(gameId, score, today = todayKey()) {
+  /**
+   * `lowerIsBetter` for a game scored by what it cost rather than what it won —
+   * Motus counts the attempts used, so one is perfect and seven is a loss.
+   * Without it the menu would announce "record 7" after his first failure and
+   * never come back down.
+   *
+   * The first game is handled apart: `asHistory` starts `best` at 0, so a plain
+   * `Math.min` would pin the record at zero for ever.
+   */
+  function record(gameId, score, { lowerIsBetter = false, today = todayKey() } = {}) {
     const saved = asHistory(storage.get(`stats.${gameId}`, null));
+    const first = saved.played === 0;
     saved.played += 1;
-    saved.best = Math.max(saved.best, score);
+    if (first) {
+      saved.best = score;
+    } else {
+      saved.best = lowerIsBetter ? Math.min(saved.best, score) : Math.max(saved.best, score);
+    }
     saved.recent = [...saved.recent, score].slice(-RECENT);
     saved.lastPlayed = today;
     storage.set(`stats.${gameId}`, saved);
