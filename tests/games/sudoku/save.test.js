@@ -129,6 +129,94 @@ test('a save whose placed digit contradicts its own clue is refused', () => {
   assert.ok(jouables.length > 0, 'la grille rendue a des cases à remplir');
 });
 
+test('a save whose difficulty is not one of the three is refused', () => {
+  // Le niveau est une clé : dans DIFFICULTIES au tirage suivant, et dans les
+  // libellés de l'écran. Accepté tel quel, il donne un menu qui propose de
+  // reprendre « une grille undefined ».
+  const storage = stockageAvec(sauvegarde(16, { difficulty: 'impossible' }));
+  const jeu = loadOrStart({ storage, rng: createRng(17), difficulty: 'moyen' });
+  assert.equal(jeu.difficulty, 'moyen');
+});
+
+test('a save whose board is not a board of 81 digits is refused', () => {
+  // Le garde le plus lourd. Un tableau trop court traverse `Int8Array.from`
+  // sans broncher, et le solveur reçoit alors une grille plus courte que ses
+  // tables d'index : il repart en arrière sans fin — pile débordée, écran
+  // blanc à l'ouverture, et rien qu'il puisse faire.
+  //
+  // Chaque grille abîmée ci-dessous reste par ailleurs d'accord avec ses
+  // propres indices : sans cette précaution, c'est le garde indice/valeur qui
+  // les refuserait, et celui-ci passerait pour utile sans l'être.
+  const { puzzle } = generate(createRng(18), 'facile');
+  const vide = [...Array(81).keys()].find((c) => !puzzle[c]);
+  const horsBornes = [...puzzle];
+  horsBornes[vide] = 42;
+  const pasUnEntier = [...puzzle];
+  pasUnEntier[vide] = '3';
+
+  const repris = [
+    ['un tableau trop court', { puzzle: [...puzzle].slice(0, 80) }],
+    ['un tableau trop long', { values: [...puzzle, 0] }],
+    ['un chiffre hors bornes', { values: horsBornes }],
+    ['un chiffre qui n’en est pas un', { values: pasUnEntier }],
+    ['pas un tableau du tout', { puzzle: { longueur: 81 } }],
+  ].filter(([, abime]) => loadOrStart({
+    storage: stockageAvec(sauvegarde(18, abime)),
+    rng: createRng(19),
+    difficulty: 'moyen',
+  }).difficulty !== 'moyen').map(([quoi]) => quoi);
+
+  assert.deepEqual(repris, [],
+    `ces sauvegardes ne doivent pas être reprises : ${repris.join(', ')}`);
+});
+
+test('notes read back from a save are digits, or nothing', () => {
+  // Ici on ne refuse pas la sauvegarde, on la nettoie : des notes abîmées ne
+  // valent pas une grille perdue. Sans le tri, la case afficherait des
+  // marques qui ne sont pas des chiffres — et le joueur n'aurait aucun moyen
+  // de les faire partir, puisque le clavier ne les propose pas.
+  const { puzzle } = generate(createRng(24), 'facile');
+  const [vide, autre] = [...Array(81).keys()].filter((c) => !puzzle[c]);
+  const notes = Array.from({ length: 81 }, () => []);
+  notes[vide] = [0, 10, -3, '4', 5.5, null, 7, 3];
+  notes[autre] = 'pas un tableau';
+  const storage = stockageAvec(sauvegarde(24, { notes }));
+
+  const jeu = loadOrStart({ storage, rng: createRng(25), difficulty: 'facile' });
+  assert.deepEqual(jeu.notesAt(vide), [3, 7], 'seuls les chiffres de 1 à 9 survivent');
+  assert.deepEqual(jeu.notesAt(autre), [], 'une liste qui n’en est pas une ne donne rien');
+});
+
+test('the mistakes read back from a save are cells of the grid', () => {
+  // Même principe, et la conséquence est visible : le compteur de l'écran est
+  // la taille de cet ensemble. Sans le tri, une sauvegarde abîmée lui annonce
+  // des erreurs qu'il n'a pas commises, et l'écran de fin les lui répète.
+  const storage = stockageAvec(sauvegarde(26, { mistakes: [0, 81, -1, 'x', 3.5, 40] }));
+  const jeu = loadOrStart({ storage, rng: createRng(27), difficulty: 'facile' });
+  assert.equal(jeu.mistakes, 2, 'seules les cases 0 et 40 en sont');
+
+  const pasUneListe = stockageAvec(sauvegarde(26, { mistakes: 'trois' }));
+  const autre = loadOrStart({ storage: pasUneListe, rng: createRng(28), difficulty: 'facile' });
+  assert.equal(autre.mistakes, 0, 'un compte illisible se lit comme aucune erreur');
+});
+
+test('undo and redo are written down like any other move', () => {
+  // `attachSaving` enveloppe cinq méthodes. Les trois premières sont tenues
+  // ailleurs ; sans les deux dernières, annuler un chiffre puis fermer
+  // l'application le ramène à la réouverture.
+  const storage = createStorage(backendWith());
+  const jeu = loadOrStart({ storage, rng: createRng(22), difficulty: 'facile' });
+  const vide = premiereVide(jeu);
+  jeu.place(vide, jeu.solutionAt(vide));
+
+  jeu.undo();
+  assert.equal(storage.get(SAVE_KEY, null).values[vide], 0,
+    'annuler s’écrit tout de suite dans la sauvegarde');
+  jeu.redo();
+  assert.equal(storage.get(SAVE_KEY, null).values[vide], jeu.valueAt(vide),
+    'refaire aussi');
+});
+
 test('a mistake survives a reload', () => {
   // Le spec est explicite : il pose le téléphone en cours de grille et revient
   // trois jours plus tard. Le compte d'erreurs doit tenir sur deux séances.
