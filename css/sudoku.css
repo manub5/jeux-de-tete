@@ -1,5 +1,10 @@
 /* css/sudoku.css */
-.grille {
+
+/* Every class here is prefixed with the game's name. All stylesheets are linked
+   globally, so an unprefixed class silently overrides another game's — and the
+   later sheet wins. Anything genuinely shared belongs in base.css. */
+
+.grille-sudoku {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   gap: 1px;
@@ -15,7 +20,7 @@
    touching a cell only selects it — nothing is destroyed, a slip picks the
    neighbour, and that is seen and undone with a second tap. Everything that
    acts keeps its 48 px. Justified in the spec, § 7. */
-.case {
+.case-sudoku {
   display: grid;
   place-items: center;
   padding: 0;
@@ -29,30 +34,30 @@
   line-height: 1;
 }
 
-.case--indice { color: var(--texte); font-weight: 700; }
-.case--choisie { outline: 3px solid var(--accent); outline-offset: -3px; }
-.case--conflit { background: var(--erreur); color: var(--accent-texte); }
+.case-sudoku--indice { color: var(--texte); font-weight: 700; }
+.case-sudoku--choisie { outline: 3px solid var(--accent); outline-offset: -3px; }
+.case-sudoku--conflit { background: var(--erreur); color: var(--accent-texte); }
 
 /* Every third column and row carries the block boundary. */
-.case:nth-child(3n) { border-right: 2px solid var(--texte); }
-.case:nth-child(9n) { border-right: 0; }
-.grille > .case:nth-child(n+19):nth-child(-n+27),
-.grille > .case:nth-child(n+46):nth-child(-n+54) {
+.case-sudoku:nth-child(3n) { border-right: 2px solid var(--texte); }
+.case-sudoku:nth-child(9n) { border-right: 0; }
+.grille-sudoku > .case-sudoku:nth-child(n+19):nth-child(-n+27),
+.grille-sudoku > .case-sudoku:nth-child(n+46):nth-child(-n+54) {
   border-bottom: 2px solid var(--texte);
 }
 
-.chiffre { font-size: 1.25rem; }
-.note { font-size: 0.6rem; color: var(--texte-faible); }
-.case:not(.case--indice) > .note:nth-child(n+2) { margin-left: 1px; }
+.chiffre-sudoku { font-size: 1.25rem; }
+.note-sudoku { font-size: 0.6rem; color: var(--texte-faible); }
+.case-sudoku:not(.case-sudoku--indice) > .note-sudoku:nth-child(n+2) { margin-left: 1px; }
 
-.clavier {
+.clavier-sudoku {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   margin-bottom: var(--marge);
 }
 
-.touche {
+.touche-sudoku {
   min-height: var(--cible);
   min-width: var(--cible);
   border: 2px solid var(--bordure);
@@ -64,4 +69,4 @@
   font-weight: 700;
 }
 
-.touche--large { grid-column: span 5; font-size: 1.1rem; }
+.touche-sudoku--large { grid-column: span 5; font-size: 1.1rem; }
