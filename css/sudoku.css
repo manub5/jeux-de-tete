@@ -5,26 +5,10 @@
    later sheet wins. Anything genuinely shared belongs in base.css. Custom
    properties are just as global as classes, so this one is prefixed too. */
 
-/* Text colour for a conflicting cell. Deliberately its own token rather than
-   --accent-texte: that variable exists to pair with --accent (a button's
-   background), not with --erreur, and the two are free to move independently
-   in a future palette revision. Reusing it here would make this pairing's
-   contrast an accident of --accent's current values instead of something
-   anyone chose. Same idiom as css/motus.css, ratios computed with the WCAG
-   relative-luminance formula:
-   light: #ffffff on --erreur light #a32020 -> 7.54:1
-   dark:  #10241a on --erreur dark  #ff8080 -> 6.71:1
-   Both colours match what --accent-texte already held in each theme, so this
-   is a decoupling, not a visual change. */
-:root {
-  --case-sudoku-conflit-texte: #ffffff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --case-sudoku-conflit-texte: #10241a;
-  }
-}
+/* The conflicting cell's text is `--texte-sur-erreur`, in base.css: the same
+   role as Motus's placed cell, on the same background, so it is one token for
+   both games rather than a colour worked out twice. This game used to hold its
+   own, and the two had drifted to different values. */
 
 .grille-sudoku {
   display: grid;
@@ -79,7 +63,7 @@
     inset 0 0 0 2px var(--accent),
     inset 0 0 0 4px var(--fond-carte);
 }
-.case-sudoku--conflit { background: var(--erreur); color: var(--case-sudoku-conflit-texte); }
+.case-sudoku--conflit { background: var(--erreur); color: var(--texte-sur-erreur); }
 
 /* Colour is never the only signal for a conflict: a small corner mark,
    inherited to the same contrast-checked colour as the digit above. Absolute
