@@ -1,0 +1,40 @@
+/* css/motus.css */
+.grille {
+  display: grid;
+  gap: 4px;
+  margin: var(--marge) 0;
+  justify-content: start;
+}
+
+.ligne {
+  display: flex;
+  gap: 4px;
+}
+
+.case {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 2px solid var(--bordure);
+  border-radius: 6px;
+  background: var(--fond-carte);
+  font-weight: 700;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.case--placed { background: var(--erreur); color: #ffffff; border-color: var(--erreur); }
+.case--present { background: #b8860b; color: #ffffff; border-color: #b8860b; }
+.case--absent { color: var(--texte-faible); }
+.case--vide { border-style: dashed; }
+
+/* The sign beside the colour: the marking must never rest on colour alone. */
+.signe { font-size: 0.7rem; line-height: 1; }
+
+.carres {
+  font-size: 1.1rem;
+  line-height: 1.25;
+  margin: var(--marge) 0;
+  white-space: pre;
+}
