@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LEVELS, logicalSolve } from '../../../games/sudoku/logic.js';
 import { candidatesOf, countBits } from '../../../games/sudoku/grid.js';
+import { countSolutions } from '../../../games/sudoku/solver.js';
 
 function grille(texte) {
   const nettoye = texte.replace(/\s/g, '');
@@ -70,4 +71,37 @@ test('a hidden single is placed where no naked single could be', () => {
   assert.ok(countBits(avant) > 1, 'la case ne doit pas déjà être un singleton nu');
   const resultat = logicalSolve(grid, LEVELS.singles);
   assert.equal(resultat.solved, true);
+});
+
+test('a grid with several answers is never reported as solved', () => {
+  // Un solveur qui ne devine jamais ne peut pas conclure sur une grille
+  // ambiguë. Celle-ci admet quatre solutions (vérifié par countSolutions,
+  // pas trois comme un premier brouillon l'avait cru) : la déclarer résolue
+  // signifierait qu'un chiffre a été posé sans droit.
+  const ambigue = grille(`
+    .34..89.2 6.2195348 1.....5.7
+    .59.6..23 ..6..3.9. .139..856
+    96.53.2.4 28....63. 34.286179
+  `);
+  assert.equal(countSolutions(ambigue, 4), 4, 'la grille témoin doit rester ambiguë');
+  assert.equal(logicalSolve(ambigue, LEVELS.singles).solved, false);
+});
+
+test('a grid the solver fills must obey the rules', () => {
+  // Grille à solution unique, entièrement résoluble par singletons — vérifié
+  // ci-dessous. La déclarer résolue n'a de sens que si le résultat est une
+  // vraie solution : l'assertion est donc sans condition, pas seulement
+  // « si le solveur dit résolu, alors... ». Avant le correctif de la table
+  // de candidats, cette même grille se corrompait (neuf cases en conflit)
+  // tout en étant annoncée résolue — le filet de sécurité final la détecte
+  // et la fait échouer, ce qu'une vérification conditionnelle n'aurait pas
+  // forcément exercé.
+  const temoin = grille(`
+    5..6789.2 .72.9.3.8 .....256.
+    85976..2. .2.8.3.91 .1.9248..
+    .6153..84 28....... ..5.86179
+  `);
+  assert.equal(countSolutions(temoin, 2), 1, 'la grille témoin a une solution unique');
+  const resultat = logicalSolve(temoin, LEVELS.singles);
+  assert.equal(resultat.solved, true, 'cette grille précise se résout entièrement par singletons');
 });
