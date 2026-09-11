@@ -120,13 +120,30 @@ test('a save whose rows are not an array is replaced, not kept', () => {
   assert.deepEqual(store.get(SAVE_KEY, null).rows, []);
 });
 
+test('an unfaithful save is replaced by a clean one, not merely dropped', () => {
+  const back = backend();
+  back.setItem('jp:motus.jour',
+    JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: false }));
+  const store = createStorage(back);
+  const jour = createDaily({ ...outils(store), day: '2026-09-11' });
+  // The restart is what writes this record back. Without it the save would be
+  // removed and never replaced, and this read would find nothing.
+  const sauvegarde = store.get(SAVE_KEY, null);
+  assert.ok(sauvegarde, 'la sauvegarde doit avoir été réécrite par le redémarrage');
+  assert.deepEqual(sauvegarde.rows, []);
+  assert.equal(sauvegarde.day, '2026-09-11');
+  assert.equal(jour.game.attempts, 0);
+});
+
 test('a storage that refuses to forget does not send the day round for ever', () => {
   const back = backend();
   back.setItem('jp:motus.jour',
     JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: false }));
   // A backend that accepts writes but never forgets: without a bound on the
-  // restart this recurses until the stack gives out. With the bound, the second
-  // pass plays on — and the game must still be playable, not closed.
+  // restart this recurses until the stack gives out. This proves only that the
+  // recursion is bounded and the game stays playable when it stops — it does
+  // not prove a restart ever happened. That is pinned by the test above, on a
+  // backend that actually forgets, where the two hypotheses diverge.
   back.removeItem = () => {};
   const jour = createDaily({ ...outils(createStorage(back)), day: '2026-09-11' });
   assert.equal(jour.game.attempts, 0);
