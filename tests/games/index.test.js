@@ -21,9 +21,14 @@ test('no game is called accueil, which is the menu itself', () => {
   assert.ok(!GAMES.some((g) => g.id === 'accueil'));
 });
 
-test('the four games are registered', () => {
+test('the five games are registered', () => {
   assert.deepEqual(GAMES.map((g) => g.id).sort(),
-    ['anagrammes', 'mot-le-plus-long', 'motus', 'tous-les-mots']);
+    ['anagrammes', 'mot-le-plus-long', 'motus', 'sudoku', 'tous-les-mots']);
+});
+
+test('the sudoku needs no frequency file, being made of digits', () => {
+  const sudoku = GAMES.find((g) => g.id === 'sudoku');
+  assert.ok(!sudoku.needsFrequencies);
 });
 
 test('needsFrequencies, when present, is a boolean, and at least one game does not need it', () => {

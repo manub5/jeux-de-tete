@@ -20,7 +20,7 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
 
   function renderLevels() {
     return element('div', {}, [
-      element('p', { text: 'Quel niveau ?' }),
+      element('p', { text: 'Quel niveau\u00a0?' }),
       element('div', { class: 'niveaux' },
         Object.keys(LEVELS).map((level) =>
           button(`${LABELS[level]} — ${LEVELS[level][0]} à ${LEVELS[level][1]} lettres`,
@@ -71,7 +71,7 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
       feedback.textContent =
         result.reason === 'lettres'
           ? 'Ce mot n’utilise pas exactement ces lettres.'
-          : `« ${attempt} » n’est pas dans le dictionnaire.`;
+          : `«\u00a0${attempt}\u00a0» n’est pas dans le dictionnaire.`;
       field.value = '';
       field.focus();
     }
@@ -99,12 +99,12 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
     const result = game.finish();
     stats.record('anagrammes', result.score);
     container.replaceChildren(
-      element('h1', { text: result.found ? 'Trouvé !' : 'Partie terminée' }),
-      element('p', { class: 'score', text: `Votre score : ${result.score} points` }),
+      element('h1', { text: result.found ? 'Trouvé\u00a0!' : 'Partie terminée' }),
+      element('p', { class: 'score', text: `Votre score\u00a0: ${result.score} points` }),
       element('p', {
         text: result.found
-          ? `Le mot était bien « ${result.word} ».`
-          : `Le mot était « ${result.word} ».`,
+          ? `Le mot était bien «\u00a0${result.word}\u00a0».`
+          : `Le mot était «\u00a0${result.word}\u00a0».`,
       }),
       button('Nouvelle partie', () => { game = null; render(); }),
       button('Retour', onQuit, { className: 'bouton bouton--discret' })
