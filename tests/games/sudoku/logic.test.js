@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LEVELS, logicalSolve } from '../../../games/sudoku/logic.js';
+import { candidatesOf, countBits } from '../../../games/sudoku/grid.js';
 
 function grille(texte) {
   const nettoye = texte.replace(/\s/g, '');
@@ -54,14 +55,19 @@ test('solving does not touch the grid it was given', () => {
   assert.deepEqual([...FACILE], [...copie]);
 });
 
-test('a hidden single is found even when the cell has several candidates', () => {
-  // Dans le premier bloc, le 4 n'a qu'une case possible bien que cette case
-  // porte plusieurs candidats : c'est exactement le singleton caché.
-  const grid = new Int8Array(81);
-  grid[1] = 1; grid[2] = 2;
-  grid[9] = 3; grid[10] = 5; grid[11] = 6;
-  grid[18] = 7; grid[19] = 8; grid[20] = 9;
+test('a hidden single is placed where no naked single could be', () => {
+  // Grille à 23 indices, solution unique (vérifiée avec le solveur exhaustif
+  // et countSolutions === 1). Dès la toute première passe, la case 44
+  // (ligne 4, colonne 8) porte quatre candidats — {1, 5, 6, 8} — donc aucun
+  // singleton nu ne peut l'atteindre. Mais dans sa ligne, le 1 n'a qu'elle
+  // comme case possible : seul le singleton caché la résout.
+  const grid = grille(`
+    .3...8... ...1..... ..8..256.
+    ...76.... .2...379. .1.......
+    ......2.4 ..741.... .452....9
+  `);
+  const avant = candidatesOf(grid, 44);
+  assert.ok(countBits(avant) > 1, 'la case ne doit pas déjà être un singleton nu');
   const resultat = logicalSolve(grid, LEVELS.singles);
-  // La case 0 ne peut être que 4 : singleton nu ici, mais la grille avance.
-  assert.ok(resultat.hardest >= LEVELS.singles);
+  assert.equal(resultat.solved, true);
 });
