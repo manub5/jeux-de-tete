@@ -119,6 +119,14 @@ function classesLitterales(expression) {
  * games/sudoku/screen.js). A class whose name is built around an interpolation
  * is not seen: it comes out under an impossible name, so it raises neither
  * noise nor a false alarm.
+ *
+ * Known hole, left open on purpose: a class that travels through a variable —
+ * `const c = 'actions'; element('div', { class: c })` — goes unseen. Catching
+ * it means following assignments across a file, a small interpreter's worth of
+ * work for a shape this project does not write. Naming the hole here is worth
+ * more than a half-built tracker that would let the next reader believe the
+ * cover is complete. That belief is the defect this project has paid for four
+ * lots running.
  */
 function classesEmployees(chemin) {
   const texte = readFileSync(chemin, 'utf8');
@@ -129,6 +137,27 @@ function classesEmployees(chemin) {
     for (const nom of classesLitterales(valeurExpression(suite))) employees.add(nom);
   }
   return employees;
+}
+
+/**
+ * The classes an HTML file puts on the DOM, read from its `class="…"`
+ * attributes.
+ *
+ * A separate reader rather than classesEmployees(): that one matches `class=`
+ * and then takes everything up to the next comma, semicolon or closing
+ * bracket, which in markup means swallowing the rest of the document and
+ * mistaking every quoted attribute in it — `type="module"` and the like — for
+ * a class name.
+ */
+function classesEmployeesHtml(chemin) {
+  const texte = readFileSync(chemin, 'utf8');
+  const noms = new Set();
+  for (const trouve of texte.matchAll(/\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+    for (const nom of (trouve[1] ?? trouve[2]).trim().split(/\s+/)) {
+      if (/^[a-zA-Z0-9_-]+$/.test(nom)) noms.add(nom);
+    }
+  }
+  return noms;
 }
 
 /**
@@ -157,6 +186,28 @@ const feuillesDeJeu = [...parFeuille].filter(([f]) => f !== 'base.css');
 const jeux = readdirSync('games', { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => e.name);
+
+/**
+ * The files every game shares. They are entitled to `css/base.css` and to
+ * nothing else: a class borrowed here does not cross one boundary, it crosses
+ * all five games at once, which makes it worse than a game reaching into its
+ * neighbour's sheet, not lighter.
+ *
+ * Until now the check only read `games/<jeu>/*.js`, so the three classes
+ * `main.js` and `index.html` put on the page escaped it entirely.
+ */
+const FICHIERS_PARTAGES = [
+  'main.js',
+  'index.html',
+  ...readdirSync('core').filter((f) => f.endsWith('.js')).map((f) => `core/${f}`),
+];
+
+/**
+ * The name classesEmpruntees() is given for a shared file. There is no
+ * `css/socle.css` — the self-test below checks that — so "its own sheet" is
+ * empty and only base.css counts as its own. Exactly the rule wanted here.
+ */
+const SOCLE = 'socle';
 
 test('deux feuilles de jeu ne définissent jamais la même classe', () => {
   for (let i = 0; i < feuillesDeJeu.length; i++) {
@@ -227,6 +278,37 @@ test('le contrôle sait reconnaître une classe empruntée', () => {
   assert.deepEqual(
     classesEmpruntees(new Set(['grille', 'grille-sudoku', 'bouton', 'lettre']), 'sudoku'),
     ['grille']);
+});
+
+test('aucun fichier partagé n’emprunte une classe à la feuille d’un jeu', () => {
+  for (const chemin of FICHIERS_PARTAGES) {
+    const employees = chemin.endsWith('.html')
+      ? classesEmployeesHtml(chemin)
+      : classesEmployees(chemin);
+    const empruntees = classesEmpruntees(employees, SOCLE);
+    assert.deepEqual(empruntees, [],
+      `${chemin} emploie des classes définies seulement dans la feuille d’un jeu : ${empruntees.join(', ')}`);
+  }
+});
+
+test('le contrôle sait lire les fichiers partagés', () => {
+  // Sans ce test, le précédent passerait aussi bien si l'extraction ne trouvait
+  // aucune classe dans main.js, dans core/ ou dans le balisage.
+  assert.ok(!parFeuille.has('socle.css'),
+    'le socle n’a pas de feuille à lui : sinon SOCLE désignerait autre chose');
+  const partage = classesEmployees('main.js');
+  assert.ok(partage.has('chargement'), 'une classe posée par main.js doit être vue');
+  assert.ok(partage.has('bandeau'), 'et celle du bandeau de nouvelle version');
+  assert.ok(classesEmployees('core/ui.js').has('bouton'),
+    'la classe par défaut de core/ui.js doit être vue');
+  const balisage = classesEmployeesHtml('index.html');
+  assert.ok(balisage.has('chargement'), 'un attribut class= du balisage doit être vu');
+  assert.ok(!balisage.has('module'),
+    'un autre attribut ne doit pas passer pour une classe');
+  // Le mutant, fabriqué ici : un fichier partagé qui emploierait `.grille`,
+  // définie dans la seule feuille de Motus, la traînerait à travers les cinq
+  // jeux — et pas `.bouton`, qui est au socle.
+  assert.deepEqual(classesEmpruntees(new Set(['grille', 'bouton']), SOCLE), ['grille']);
 });
 
 test('deux feuilles ne déclarent jamais la même variable sur :root', () => {
