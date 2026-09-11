@@ -41,7 +41,7 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
   }
 
   function renderGame() {
-    const grille = element('div', { class: 'grille', role: 'grid', 'aria-label': 'Grille de sudoku' });
+    const grille = element('div', { class: 'grille-sudoku', role: 'grid', 'aria-label': 'Grille de sudoku' });
     const compteur = element('p', { class: 'sous-titre', role: 'status' });
 
     function refresh() {
@@ -50,10 +50,10 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
         ...Array.from({ length: 81 }, (_, cell) => {
           const valeur = game.valueAt(cell);
           const notes = game.notesAt(cell);
-          const classes = ['case'];
-          if (game.given(cell)) classes.push('case--indice');
-          if (cell === selected) classes.push('case--choisie');
-          if (conflits.has(cell)) classes.push('case--conflit');
+          const classes = ['case-sudoku'];
+          if (game.given(cell)) classes.push('case-sudoku--indice');
+          if (cell === selected) classes.push('case-sudoku--choisie');
+          if (conflits.has(cell)) classes.push('case-sudoku--conflit');
           const etiquette = valeur
             ? `ligne ${Math.floor(cell / 9) + 1}, colonne ${(cell % 9) + 1}, ${valeur}`
             : `ligne ${Math.floor(cell / 9) + 1}, colonne ${(cell % 9) + 1}, vide`;
@@ -63,8 +63,8 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
             'aria-label': conflits.has(cell) ? `${etiquette}, en conflit` : etiquette,
             onClick: () => { selected = cell; refresh(); },
           }, valeur
-            ? [element('span', { class: 'chiffre', text: String(valeur) })]
-            : notes.map((n) => element('span', { class: 'note', text: String(n) })));
+            ? [element('span', { class: 'chiffre-sudoku', text: String(valeur) })]
+            : notes.map((n) => element('span', { class: 'note-sudoku', text: String(n) })));
         })
       );
       compteur.textContent =
@@ -81,13 +81,13 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       if (game.phase === 'terminée') finish();
     }
 
-    const clavier = element('div', { class: 'clavier' },
+    const clavier = element('div', { class: 'clavier-sudoku' },
       [...Array(9).keys()].map((i) =>
-        button(String(i + 1), () => poser(i + 1), { className: 'touche' })
+        button(String(i + 1), () => poser(i + 1), { className: 'touche-sudoku' })
       ).concat(
         button('Effacer', () => {
           if (selected >= 0) { game.erase(selected); refresh(); }
-        }, { className: 'touche touche--large' })
+        }, { className: 'touche-sudoku touche-sudoku--large' })
       )
     );
 
