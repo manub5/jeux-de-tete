@@ -87,7 +87,7 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
       } else {
         feedback.className = 'retour erreur';
         feedback.textContent =
-          MESSAGES[result.reason] ?? `« ${attempt} » n’est pas dans le dictionnaire.`;
+          MESSAGES[result.reason] ?? `«\u00a0${attempt}\u00a0» n’est pas dans le dictionnaire.`;
       }
       field.value = '';
       field.focus();

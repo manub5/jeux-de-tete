@@ -9,7 +9,27 @@
   --bordure: #d8d4c8;
   --texte-faible: #6b6b6b; /* AA against --fond: 5.2:1 */
 
-  --corps: 18px;           /* accessibility floor, never smaller */
+  /* Text that has to stay readable on --erreur, wherever a game paints an
+     error red: Motus's placed cell, the sudoku's conflicting one. Both games
+     had worked it out on their own, in their own sheet, landing on two
+     different colours for one role (#1b1b1b and #10241a in dark). That is how
+     this lot came to replay three of lot 3's fixes word for word. One token,
+     both games. Ratios from the WCAG relative-luminance formula, recomputed
+     here: #ffffff on --erreur light #a32020 gives 7.54:1. The value is Motus's
+     to the byte, so nothing moves in a shipped game; the sudoku gains a little
+     in dark, 6.71:1 to 7.10:1. */
+  --texte-sur-erreur: #ffffff;
+
+  /* Accessibility floor, never smaller. Careful: this is declared on :root but
+     applied on `body` below, so the root element keeps the browser's default
+     size and `1rem` is 16 px, not 18. Every `rem` in the project is therefore
+     12.5 % smaller than it reads — `0.55rem` rendered 8.8 px, not 9.9. Left as
+     is on purpose: `:root { font-size: var(--corps) }` would rescale every rem
+     in four shipped games at once. Measured on Motus, whose eight-letter row
+     already fills 335 px of the 328 px available at 360 px wide, and would go
+     to 373. Anything that must hold a real size — a mark, a sign — is written
+     in px and measured in the browser. */
+  --corps: 18px;
   --cible: 48px;           /* minimum touch target */
   --rayon: 12px;
   --marge: 16px;
@@ -25,6 +45,8 @@
     --erreur: #ff8080;
     --bordure: #343a40;
     --texte-faible: #9aa0a6; /* AA against --fond: 6.8:1 */
+    /* --erreur turns into a much lighter red in dark, so its text flips. */
+    --texte-sur-erreur: #1b1b1b; /* on --erreur dark #ff8080: 7.10:1 */
   }
 }
 
@@ -141,5 +163,10 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 
 .retour { min-height: 3rem; }
 .score { font-weight: 700; }
+/* The objective line: two games use it (the longest word and Motus), like
+   .score and .retour above. It used to live in the first game's sheet, where
+   the second was borrowing it in silence — the same fault as `.actions` under
+   the sudoku. Declaration unchanged, so neither game moves. */
+.objectif { font-weight: 600; }
 
 .sous-titre { color: var(--texte-faible); margin: 0 0 var(--marge); }

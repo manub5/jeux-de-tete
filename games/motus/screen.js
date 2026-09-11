@@ -98,7 +98,7 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
       );
     }
 
-    children.push(element('p', { class: 'sous-titre', text: 'Ou une partie libre :' }));
+    children.push(element('p', { class: 'sous-titre', text: 'Ou une partie libre\u00a0:' }));
     for (const length of LENGTHS) {
       children.push(
         button(`${length} lettres`, () => {
@@ -260,12 +260,12 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     stats.record('motus', resultat.score, { lowerIsBetter: true });
 
     const enfants = [
-      element('h1', { text: resultat.won ? 'Trouvé !' : 'Partie terminée' }),
+      element('h1', { text: resultat.won ? 'Trouvé\u00a0!' : 'Partie terminée' }),
       element('p', {
         class: 'score',
         text: resultat.won
           ? `En ${resultat.attempts} essai${resultat.attempts > 1 ? 's' : ''}.`
-          : `Le mot était « ${resultat.word.toUpperCase()} ».`,
+          : `Le mot était «\u00a0${resultat.word.toUpperCase()}\u00a0».`,
       }),
     ];
 
