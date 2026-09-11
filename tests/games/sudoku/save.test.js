@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRng } from '../../../core/rng.js';
 import { createStorage } from '../../../core/storage.js';
+import { generate } from '../../../games/sudoku/generate.js';
 import { SAVE_KEY, clearSave, loadOrStart } from '../../../games/sudoku/save.js';
 
 function backendWith(entries = {}) {
@@ -76,6 +77,56 @@ test('a save whose puzzle has no single answer is refused', () => {
   const jeu = loadOrStart({ storage, rng: createRng(7), difficulty: 'facile' });
   assert.ok(jeu.given(0) || [...Array(81).keys()].some((c) => jeu.given(c)),
     'une grille neuve doit avoir été distribuée');
+});
+
+/**
+ * Une sauvegarde bien formée, tirée d'une vraie grille. Les essais qui suivent
+ * n'en abîment qu'un détail à la fois, pour que le refus vienne de ce
+ * détail-là et de rien d'autre.
+ */
+function sauvegarde(graine, changements = {}) {
+  const { puzzle } = generate(createRng(graine), 'facile');
+  return {
+    difficulty: 'facile',
+    puzzle: [...puzzle],
+    values: [...puzzle],
+    notes: Array.from({ length: 81 }, () => []),
+    mistakes: [],
+    ...changements,
+  };
+}
+
+function stockageAvec(sauvee) {
+  return createStorage(backendWith({ 'jp:sudoku.partie': JSON.stringify(sauvee) }));
+}
+
+test('a save in the right shape is taken up, so a refusal means something', () => {
+  // L'auto-test de tous les refus qui suivent : la même fabrique, sans rien
+  // abîmer, doit être reprise. Sinon un `asSaved` qui refuserait tout les
+  // ferait tous passer au vert.
+  const storage = stockageAvec(sauvegarde(14));
+  const jeu = loadOrStart({ storage, rng: createRng(15), difficulty: 'difficile' });
+  assert.equal(jeu.difficulty, 'facile', 'la partie sauvegardée est reprise');
+});
+
+test('a save whose placed digit contradicts its own clue is refused', () => {
+  // Sans ce garde, la sauvegarde trafiquée est acceptée : les 81 cases sont
+  // remplies, mais la case fautive est un indice, donc `place` et `erase` la
+  // refusent, et comme le compte ne tombe pas juste la phase reste « en
+  // cours ». La grille ne peut plus être finie, et rien ne le lui dit.
+  const { puzzle, solution } = generate(createRng(12), 'facile');
+  const indice = [...Array(81).keys()].find((c) => puzzle[c] !== 0);
+  const values = [...solution];
+  values[indice] = solution[indice] === 9 ? 1 : solution[indice] + 1;
+  const storage = stockageAvec(sauvegarde(12, { values }));
+
+  const jeu = loadOrStart({ storage, rng: createRng(13), difficulty: 'moyen' });
+  assert.equal(jeu.difficulty, 'moyen',
+    'la sauvegarde qui se contredit est écartée, une grille neuve est distribuée');
+  assert.equal(jeu.phase, 'en cours');
+  const jouables = [...Array(81).keys()]
+    .filter((c) => !jeu.given(c) && jeu.valueAt(c) === 0);
+  assert.ok(jouables.length > 0, 'la grille rendue a des cases à remplir');
 });
 
 test('a mistake survives a reload', () => {
