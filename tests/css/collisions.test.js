@@ -3,18 +3,18 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
 /**
- * Deux feuilles de jeu ne doivent jamais définir la même classe.
+ * No two game stylesheets may ever define the same class.
  *
- * Toutes les feuilles sont liées globalement dans `index.html`, sans portée par
- * jeu : une classe définie deux fois est écrasée par la dernière chargée, en
- * silence. Le lot 4 l'a découvert en ajoutant le sudoku, dont `.grille` et
- * `.case` auraient mis les lignes d'essai de Motus côte à côte et fait tomber le
- * contraste de ses cases marquées — sur un jeu déjà livré.
+ * Every sheet is linked globally from `index.html`, with no per-game scope: a
+ * class defined twice is silently overwritten by whichever loads last. Lot 4
+ * found this out by adding the sudoku, whose `.grille` and `.case` would have
+ * laid Motus's attempt rows side by side and dropped the contrast of its
+ * marked squares — on a game already in his hands.
  *
- * On ne compare que les **sujets de règles à classe unique** (`.x { }`). Un
- * sélecteur descendant comme `.retour .bouton` affine une classe partagée dans
- * un conteneur donné, ce qui est légitime et courant. Un contrôle qui crie à tort
- * finit par être ignoré, et alors il ne protège plus de rien.
+ * Only **single-class rule subjects** (`.x { }`) are compared. A descendant
+ * selector like `.retour .bouton` refines a shared class inside one container,
+ * which is legitimate and common. A check that cries wolf ends up ignored, and
+ * then it protects nothing at all.
  */
 function classesDefinies(chemin) {
   const texte = readFileSync(chemin, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -29,13 +29,13 @@ function classesDefinies(chemin) {
 }
 
 /**
- * Les propriétés personnalisées (`--x`) posées sur `:root` par une feuille.
+ * The custom properties (`--x`) a sheet sets on `:root`.
  *
- * Elles sont aussi globales que les classes : deux feuilles qui déclarent la
- * même sur `:root` s'écrasent en silence, et la dernière chargée gagne. On ne
- * relève que les **déclarations** sur `:root` — `var(--erreur)` dans une règle
- * de jeu est un emploi, pas une définition, et le confondre ferait crier le
- * contrôle sur chaque feuille.
+ * They are every bit as global as classes: two sheets declaring the same one
+ * on `:root` silently overwrite each other, and the last loaded wins. Only
+ * **declarations** on `:root` count — `var(--erreur)` inside a game's rule is
+ * a use, not a definition, and confusing the two would set the check
+ * screaming at every sheet in the project.
  */
 function variablesRacine(chemin) {
   const texte = readFileSync(chemin, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -47,18 +47,18 @@ function variablesRacine(chemin) {
   return noms;
 }
 
-/** Les noms déclarés par les deux feuilles à la fois. */
+/** The names both sheets declare. */
 function variablesCommunes(a, b) {
   return [...a].filter((v) => b.has(v)).sort();
 }
 
 /**
- * La valeur d'une propriété d'objet ou d'une affectation, à partir du texte qui
- * suit le `:` ou le `=`. On s'arrête à la première virgule, au premier
- * point-virgule ou à la première fermeture de niveau zéro, guillemets
- * respectés. Prendre le reste de la ligne ramasserait
- * `text: 'Ou une nouvelle grille :'` et ferait passer le mot « grille » pour la
- * classe de Motus ; ne pas s'arrêter du tout ramasserait la suite du fichier.
+ * The value of an object property or an assignment, read from the text that
+ * follows the `:` or the `=`. It stops at the first comma, semicolon or
+ * closing bracket at depth zero, quotes respected. Taking the rest of the line
+ * would swallow `text: 'Ou une nouvelle grille :'` and pass the word "grille"
+ * off as Motus's class; stopping nowhere at all would swallow the rest of the
+ * file.
  */
 function valeurExpression(fragment) {
   let profondeur = 0;
@@ -80,7 +80,7 @@ function valeurExpression(fragment) {
   return fragment;
 }
 
-/** Les noms de classe contenus dans les littéraux d'une expression. */
+/** The class names held in an expression's string literals. */
 function classesLitterales(expression) {
   const noms = new Set();
   const morceaux = [];
@@ -88,18 +88,17 @@ function classesLitterales(expression) {
     morceaux.push(trouve[1] ?? trouve[2]);
   }
   for (const [, valeur] of expression.matchAll(/`([^`]*)`/g)) {
-    // Une interpolation devient un nom impossible plutôt que de disparaître :
-    // `case--${mark}` ne doit pas se lire comme la classe « case-- ». Le
-    // marqueur est `{}`, dont les accolades sont hors du jeu de caractères d'un
-    // nom de classe. Ne pas le remplacer par un octet nul : le fichier devient
-    // binaire pour git et son diff cesse d'être relisible.
+    // An interpolation turns into an impossible name rather than vanishing:
+    // `case--${mark}` must not read as the class "case--". The marker is `{}`,
+    // whose braces are outside the character set of a class name. Do not
+    // replace it with a null byte: git would call the file binary and its diff
+    // would stop being readable.
     //
-    // Honnêteté sur sa portée : **aucun test ne tombe si on l'enlève**, et c'est
-    // vérifié. Le contrôle ne signale que les emprunts — une classe définie dans
-    // la feuille d'un AUTRE jeu — et « case-- » n'est définie nulle part, donc
-    // elle serait ignorée de toute façon. Ce marqueur est une précaution contre
-    // le jour où un autre jeu définirait « case-- », pas un comportement testé.
-    // Ne pas le présenter comme tel.
+    // Honesty about its reach: **no test falls if you remove it**, and that is
+    // verified. The check only reports borrowings — a class defined in ANOTHER
+    // game's sheet — and "case--" is defined nowhere, so it would be ignored
+    // either way. This marker guards against the day some game does define
+    // "case--"; it is not a tested behaviour. Do not present it as one.
     morceaux.push(valeur.replace(/\$\{[^{}]*\}/g, '{}'));
   }
   for (const morceau of morceaux) {
@@ -111,15 +110,15 @@ function classesLitterales(expression) {
 }
 
 /**
- * Les classes qu'un fichier de jeu pose sur le DOM.
+ * The classes a JavaScript file puts on the DOM.
  *
- * On lit les quatre formes que ce projet emploie : `class:` / `className:` dans
- * un littéral d'objet, l'affectation `.className =`, `classList.add()` et ses
- * voisines, et le tableau de classes qu'on assemble avant de le joindre
- * (`const classes = [...]`, `classes.push(...)` — la forme de
- * games/sudoku/screen.js). Une classe dont le nom est construit autour d'une
- * interpolation n'est pas vue : elle sort avec un nom impossible, donc sans
- * bruit ni fausse alerte.
+ * The four shapes this project uses are read: `class:` / `className:` in an
+ * object literal, the `.className =` assignment, `classList.add()` and its
+ * neighbours, and the array of classes assembled before being joined
+ * (`const classes = [...]`, `classes.push(...)` — the shape of
+ * games/sudoku/screen.js). A class whose name is built around an interpolation
+ * is not seen: it comes out under an impossible name, so it raises neither
+ * noise nor a false alarm.
  */
 function classesEmployees(chemin) {
   const texte = readFileSync(chemin, 'utf8');
@@ -133,13 +132,13 @@ function classesEmployees(chemin) {
 }
 
 /**
- * Les classes qu'un jeu emploie sans qu'elles soient à lui : ni dans
- * `css/base.css`, ni dans sa propre feuille, mais bien dans celle d'un autre
- * jeu. C'est l'emprunt silencieux — le sudoku a vécu sur `.actions`, définie
- * uniquement dans `css/mot-le-plus-long.css`, où elle avait l'air morte.
+ * The classes a game uses that are not its own: neither in `css/base.css` nor
+ * in its own sheet, but sitting in another game's. This is the silent
+ * borrowing — the sudoku lived on `.actions`, defined only in
+ * `css/mot-le-plus-long.css`, where it looked like a dead rule.
  *
- * Une classe définie **nulle part** n'est pas un emprunt : `.lettre`, posée par
- * Motus, ne nomme qu'un repère dans le balisage et ne dépend d'aucune feuille.
+ * A class defined **nowhere** is not a borrowing: `.lettre`, put on by Motus,
+ * only names a landmark in the markup and depends on no sheet at all.
  */
 function classesEmpruntees(employees, jeu) {
   const propres = new Set([
@@ -181,17 +180,17 @@ test('aucune feuille de jeu ne redéfinit une classe de base.css', () => {
 });
 
 test('le contrôle sait reconnaître une collision', () => {
-  // Sans ce test, les deux précédents passeraient aussi bien si l'extraction
-  // ne trouvait aucune classe du tout — le défaut exact que ce lot a traqué
-  // partout ailleurs.
+  // Without this test, the two above would pass just as happily if the
+  // extraction found no class whatsoever — the very defect this lot hunted
+  // down everywhere else.
   const feuille = classesDefinies('css/sudoku.css');
   assert.ok(feuille.size > 0, 'l’extraction doit trouver des classes');
   assert.ok(feuille.has('grille-sudoku'), 'elle doit trouver une classe connue');
 });
 
 test('un sélecteur descendant n’est pas une définition', () => {
-  // `.retour .bouton` affine une classe partagée : ce n'est pas une collision,
-  // et le confondre ferait crier le contrôle sur du code correct.
+  // `.retour .bouton` refines a shared class: that is not a collision, and
+  // confusing the two would set the check screaming at correct code.
   assert.ok(!classesDefinies('css/mot-le-plus-long.css').has('bouton'));
 });
 
@@ -209,8 +208,8 @@ test('aucun jeu n’emprunte une classe à la feuille d’un autre jeu', () => {
 });
 
 test('le contrôle sait reconnaître une classe empruntée', () => {
-  // Sans ce test, le précédent passerait aussi bien si l'extraction ne trouvait
-  // aucune classe, ou si la comparaison ne comparait rien.
+  // Without this test, the one above would pass just as happily if the
+  // extraction found no class, or if the comparison compared nothing.
   const employees = classesEmployees('games/sudoku/screen.js');
   assert.ok(employees.has('actions-sudoku'), 'un littéral `class:` doit être vu');
   assert.ok(employees.has('bouton--discret'), 'une classe parmi plusieurs doit être vue');
@@ -218,14 +217,13 @@ test('le contrôle sait reconnaître une classe empruntée', () => {
     'une classe assemblée en tableau doit être vue');
   assert.ok(!employees.has('grille'),
     'un mot d’un texte affiché ne doit pas passer pour une classe');
-  // Le mutant, fabriqué ici : un sudoku qui emploierait `.grille`, définie dans
-  // la seule feuille de Motus, doit être dénoncé — et pas `.bouton`, qui est au
-  // socle, ni `.lettre`, qui n'est définie nulle part, ni ses propres classes.
+  // The mutant, built right here: a sudoku using `.grille`, defined in Motus's
+  // sheet alone, must be denounced — and not `.bouton`, which belongs to the
+  // socle, nor `.lettre`, which is defined nowhere, nor its own classes.
   //
-  // Le cobaye ne doit pas être une classe qu'on souhaite voir disparaître :
-  // celui d'avant était `.actions`, restée morte dans la feuille du mot le plus
-  // long, et supprimer cette règle morte cassait l'auto-test au lieu de le
-  // laisser faire son travail.
+  // The guinea pig must not be a class anyone wants gone: the last one was
+  // `.actions`, left dead in the longest-word sheet, and deleting that dead
+  // rule broke the self-test instead of letting it do its job.
   assert.deepEqual(
     classesEmpruntees(new Set(['grille', 'grille-sudoku', 'bouton', 'lettre']), 'sudoku'),
     ['grille']);
@@ -252,7 +250,7 @@ test('le contrôle sait reconnaître une variable partagée', () => {
     'employer `var(--erreur)` dans une règle n’est pas la déclarer');
   assert.ok(variablesRacine('css/motus.css').has('--case-present-texte'),
     'une feuille de jeu déclare bien les siennes');
-  // Le mutant, fabriqué ici : deux feuilles qui déclareraient `--erreur`.
+  // The mutant, built right here: two sheets both declaring `--erreur`.
   assert.deepEqual(
     variablesCommunes(new Set(['--erreur', '--marge']), new Set(['--erreur', '--rayon'])),
     ['--erreur']);
