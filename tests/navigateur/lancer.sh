@@ -7,7 +7,8 @@ set -euo pipefail
 ICI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RACINE="$(cd "$ICI/../.." && pwd)"
 PYTHON="${PYTHON:-python3}"
-ESSAIS=(essai_sudoku.py essai_hauteurs.py essai_motus.py essai_ensemble.py)
+ESSAIS=(essai_sudoku.py essai_hauteurs.py essai_motus.py essai_ensemble.py \
+        essai_mise_a_jour.py)
 
 if [[ ! -f "$RACINE/index.html" ]]; then
   echo "Racine du dépôt introuvable : $RACINE" >&2
