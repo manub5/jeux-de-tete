@@ -2,7 +2,6 @@
 .actions { display: flex; gap: var(--marge); }
 .actions .bouton { flex: 1; }
 
-.objectif { font-weight: 600; }
 .retour .bouton { margin-left: 0.5rem; }
 .propositions { padding-left: 1.2rem; }
 /* No empty list taking up room before the first word is found. */

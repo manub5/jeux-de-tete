@@ -87,6 +87,18 @@
 .note-sudoku { font-size: 0.6rem; color: var(--texte-faible); }
 .case-sudoku:not(.case-sudoku--indice) > .note-sudoku:nth-child(n+2) { margin-left: 1px; }
 
+/* Une rangée d'actions, à parts égales. Même effet que `.actions` dans
+   css/mot-le-plus-long.css, mais sous le nom de ce jeu : toutes les feuilles
+   sont liées globalement, et emprunter la classe d'un autre jeu rendait la mise
+   en page du sudoku dépendante d'une règle qui, chez lui, a l'air morte.
+   Le contrôle qui l'interdit est dans tests/css/collisions.test.js. */
+.actions-sudoku {
+  display: flex;
+  gap: var(--marge);
+}
+
+.actions-sudoku > .bouton { flex: 1; }
+
 .clavier-sudoku {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

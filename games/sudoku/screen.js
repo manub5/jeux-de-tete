@@ -181,7 +181,7 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       compteur,
       grille,
       clavier,
-      element('div', { class: 'actions' }, [annuler, refaire]),
+      element('div', { class: 'actions-sudoku' }, [annuler, refaire]),
       notes,
       button('Reprendre plus tard', onQuit, { className: 'bouton bouton--discret' }),
       abandonner,
