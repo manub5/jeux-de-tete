@@ -7,7 +7,8 @@ set -euo pipefail
 ICI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RACINE="$(cd "$ICI/../.." && pwd)"
 PYTHON="${PYTHON:-python3}"
-ESSAIS=(essai_sudoku.py essai_hauteurs.py essai_motus.py essai_ensemble.py)
+ESSAIS=(essai_sudoku.py essai_hauteurs.py essai_motus.py essai_ensemble.py \
+        essai_mise_a_jour.py)
 
 if [[ ! -f "$RACINE/index.html" ]]; then
   echo "Racine du dépôt introuvable : $RACINE" >&2
@@ -81,4 +82,6 @@ if [[ "${#echecs[@]}" -gt 0 ]]; then
   echo "Essais en échec : ${echecs[*]}" >&2
   exit 1
 fi
-echo "Les quatre essais passent."
+# Counted, not written down: the sentence was still saying "four" the day a
+# fifth script landed, and a summary that miscounts is a summary nobody reads.
+echo "Les ${#ESSAIS[@]} essais passent."
