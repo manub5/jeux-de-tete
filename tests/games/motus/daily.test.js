@@ -123,12 +123,31 @@ test('a save whose rows are not an array is replaced, not kept', () => {
 test('a storage that refuses to forget does not send the day round for ever', () => {
   const back = backend();
   back.setItem('jp:motus.jour',
-    JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: true }));
-  // A backend that accepts writes but never actually forgets: without a bound on
-  // the restart, this recurses until the stack gives out.
+    JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: false }));
+  // A backend that accepts writes but never forgets: without a bound on the
+  // restart this recurses until the stack gives out. With the bound, the second
+  // pass plays on — and the game must still be playable, not closed.
   back.removeItem = () => {};
   const jour = createDaily({ ...outils(createStorage(back)), day: '2026-09-11' });
   assert.equal(jour.game.attempts, 0);
+  assert.equal(jour.game.phase, 'recherche');
+  assert.equal(jour.alreadyPlayed, false);
+});
+
+test('a storage that refuses to forget never turns an unfaithful replay into a false loss', () => {
+  const back = backend();
+  back.setItem('jp:motus.jour',
+    JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: true }));
+  // Same non-forgetting backend as the bound test above, but marked finished:
+  // the bounded second pass is still unfaithful (the row never replays), so
+  // only the `fidele` gate stands between this and a bogus giveUp() — a loss
+  // he may never have had, reported one recursion level later than the ruling
+  // that was supposed to remove it for good (I1).
+  back.removeItem = () => {};
+  const jour = createDaily({ ...outils(createStorage(back)), day: '2026-09-11' });
+  assert.equal(jour.game.phase, 'recherche');
+  assert.equal(jour.alreadyPlayed, false);
+  assert.equal(jour.result, null);
 });
 
 test('a day he gave up on stays given up, and is not handed back to him', () => {
