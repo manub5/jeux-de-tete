@@ -157,10 +157,14 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       game.redo();
       refresh();
     }, { className: 'bouton bouton--discret' });
-    const notes = button('Notes : non', () => {
+    // `\u00a0` rather than a literal no-break space: an invisible character in
+    // the source is the kind of thing a later edit silently drops.
+    const notes = button('Notes\u00a0: non', () => {
       resetAbandon();
       noting = !noting;
-      notes.textContent = `Notes : ${noting ? 'oui' : 'non'}`;
+      // A no-break space before the colon: French typography requires it, and
+      // it also stops the label from wrapping as « Notes » / « : non ».
+      notes.textContent = `Notes\u00a0: ${noting ? 'oui' : 'non'}`;
       notes.setAttribute('aria-pressed', String(noting));
     }, { className: 'bouton bouton--discret', 'aria-pressed': 'false' });
 

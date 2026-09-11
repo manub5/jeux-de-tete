@@ -1,6 +1,4 @@
 /* css/mot-le-plus-long.css */
-.actions { display: flex; gap: var(--marge); }
-.actions .bouton { flex: 1; }
 
 .retour .bouton { margin-left: 0.5rem; }
 .propositions { padding-left: 1.2rem; }
