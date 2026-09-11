@@ -218,12 +218,17 @@ test('le contrôle sait reconnaître une classe empruntée', () => {
     'une classe assemblée en tableau doit être vue');
   assert.ok(!employees.has('grille'),
     'un mot d’un texte affiché ne doit pas passer pour une classe');
-  // Le mutant, fabriqué ici : un jeu qui emploierait `.actions`, définie dans la
-  // seule feuille du mot le plus long, doit être dénoncé — et pas `.lettre`,
-  // qui n'est définie nulle part, ni ses propres classes.
+  // Le mutant, fabriqué ici : un sudoku qui emploierait `.grille`, définie dans
+  // la seule feuille de Motus, doit être dénoncé — et pas `.bouton`, qui est au
+  // socle, ni `.lettre`, qui n'est définie nulle part, ni ses propres classes.
+  //
+  // Le cobaye ne doit pas être une classe qu'on souhaite voir disparaître :
+  // celui d'avant était `.actions`, restée morte dans la feuille du mot le plus
+  // long, et supprimer cette règle morte cassait l'auto-test au lieu de le
+  // laisser faire son travail.
   assert.deepEqual(
-    classesEmpruntees(new Set(['actions', 'grille-sudoku', 'bouton', 'lettre']), 'sudoku'),
-    ['actions']);
+    classesEmpruntees(new Set(['grille', 'grille-sudoku', 'bouton', 'lettre']), 'sudoku'),
+    ['grille']);
 });
 
 test('deux feuilles ne déclarent jamais la même variable sur :root', () => {
