@@ -9,6 +9,17 @@
   --bordure: #d8d4c8;
   --texte-faible: #6b6b6b; /* AA against --fond: 5.2:1 */
 
+  /* Text that has to stay readable on --erreur, wherever a game paints an
+     error red: Motus's placed cell, the sudoku's conflicting one. Both games
+     had worked it out on their own, in their own sheet, landing on two
+     different colours for one role (#1b1b1b and #10241a in dark). That is how
+     this lot came to replay three of lot 3's fixes word for word. One token,
+     both games. Ratios from the WCAG relative-luminance formula, recomputed
+     here: #ffffff on --erreur light #a32020 gives 7.54:1. The value is Motus's
+     to the byte, so nothing moves in a shipped game; the sudoku gains a little
+     in dark, 6.71:1 to 7.10:1. */
+  --texte-sur-erreur: #ffffff;
+
   /* Accessibility floor, never smaller. Careful: this is declared on :root but
      applied on `body` below, so the root element keeps the browser's default
      size and `1rem` is 16 px, not 18. Every `rem` in the project is therefore
@@ -34,6 +45,8 @@
     --erreur: #ff8080;
     --bordure: #343a40;
     --texte-faible: #9aa0a6; /* AA against --fond: 6.8:1 */
+    /* --erreur turns into a much lighter red in dark, so its text flips. */
+    --texte-sur-erreur: #1b1b1b; /* on --erreur dark #ff8080: 7.10:1 */
   }
 }
 
