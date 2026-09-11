@@ -93,7 +93,14 @@
      fautive, où il est le plus utile. */
   top: 4px;
   right: 4px;
-  font-size: 0.55rem;
+  /* 12 px pleins, mesurés au rendu. En `0.55rem` il en faisait 8,8 : `1rem` vaut
+     16 px, la taille par défaut du navigateur, parce que `--corps: 18px` est
+     déclaré sur `:root` mais appliqué sur `body` (voir css/base.css). Moins de
+     la moitié du plancher, pour le seul signal qui remplace la couleur. En
+     pixels, il ne dépend plus de cet écart. Plus grand, il toucherait le
+     chiffre : celui-ci occupe 11,45 px de large au centre d'une case de
+     35,11 px, et l'anneau de sélection en prend 4 de plus dans le coin. */
+  font-size: 12px;
   line-height: 1;
   color: currentColor;
 }
