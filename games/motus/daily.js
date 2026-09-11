@@ -18,7 +18,11 @@ export const SAVE_KEY = 'motus.jour';
 function asSaved(raw, day) {
   if (typeof raw !== 'object' || raw === null) return null;
   if (raw.day !== day) return null;
-  const rows = Array.isArray(raw.rows) ? raw.rows.filter((w) => typeof w === 'string') : [];
+  // A `rows` of the wrong shape is not a save to be salvaged: reading it as an
+  // empty game would leave the bad value sitting in storage. Refuse it outright
+  // and let a fresh day overwrite it.
+  if (!Array.isArray(raw.rows)) return null;
+  const rows = raw.rows.filter((w) => typeof w === 'string');
   return { rows, finished: raw.finished === true };
 }
 
@@ -42,6 +46,18 @@ export function createDaily({ lexicon, storage, frequencies, day }) {
       // forced in: the dictionary may have changed under the save.
       game.propose(attempt);
     }
+    if (game.attempts !== saved.rows.length) {
+      // Some saved attempt no longer replays — the dictionary changed under the
+      // save, so the grid we could rebuild is not the grid he played. Closing
+      // the game here would announce a loss he may not have had, and showing a
+      // short grid would be a quiet lie. Start the day again: handing him back
+      // a puzzle is honest, telling him he lost is not.
+      storage.remove(SAVE_KEY);
+      return createDaily({ lexicon, storage, frequencies, day });
+    }
+    // Every row replayed, so the save is faithful. A save marked finished whose
+    // rows did not end the game means he gave up — that is what giveUp()
+    // reconstructs, and it is the only thing it can mean here.
     if (saved.finished && game.phase !== 'terminée') game.giveUp();
   } else {
     save();
