@@ -99,21 +99,34 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
   function renderGame() {
     const grille = element('div', { class: 'grille', 'aria-label': 'Vos essais' });
 
-    function refresh() {
-      const lignes = game.rows.map((row) =>
-        element('div', { class: 'ligne' },
+    // `rowToAnimate` names the row just played, if any: `refresh` rebuilds
+    // every row on every call, so without this only that one row may carry
+    // the landing animation. Left undefined (the initial call on mount), no
+    // index matches and a resumed saved game stays still.
+    function refresh(rowToAnimate) {
+      const lignes = game.rows.map((row, index) => {
+        const estNouvelle = index === rowToAnimate;
+        const gagnee = estNouvelle && game.phase === 'terminée' && game.result.won;
+        const attrsLigne = { class: gagnee ? 'ligne ligne--victoire' : 'ligne' };
+        // `--longueur` lets the winning row's bounce wait for its own last
+        // cell to land, whatever the word's length.
+        if (gagnee) attrsLigne.style = `--longueur: ${game.length}`;
+        return element('div', attrsLigne,
           [...row.word].map((letter, i) => {
             const { sign, label } = SIGNS[row.marks[i]];
-            return element('span', {
-              class: `case case--${row.marks[i]}`,
+            const attrsCase = {
+              class: `case case--${row.marks[i]}${estNouvelle ? ' case--arrive' : ''}`,
               'aria-label': `${letter.toUpperCase()}, ${label}`,
-            }, [
+            };
+            // Same idiom as the falling tiles: `--rang` staggers the cells.
+            if (estNouvelle) attrsCase.style = `--rang: ${i}`;
+            return element('span', attrsCase, [
               element('span', { class: 'lettre', text: letter.toUpperCase() }),
               element('span', { class: 'signe', 'aria-hidden': 'true', text: sign }),
             ]);
           })
-        )
-      );
+        );
+      });
       // The attempts he has left, drawn empty, so the six are visible from the
       // start rather than appearing one by one.
       for (let i = game.rows.length; i < MAX_ATTEMPTS; i++) {
@@ -143,6 +156,10 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
         field.value = attendu + field.value.replace(new RegExp(`^${attendu}`, 'i'), '');
       }
     });
+    // Lets a second refusal in a row retrigger the shake (see submit below).
+    field.addEventListener('animationend', (event) => {
+      if (event.animationName === 'secousse') field.classList.remove('saisie--secoue');
+    });
 
     const feedback = element('p', { class: 'retour', role: 'status' });
 
@@ -152,14 +169,33 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
       if (!retour.ok) {
         feedback.className = 'retour erreur';
         feedback.textContent = MESSAGES[retour.reason] ?? MESSAGES.inconnu;
+        // A short shake says "no" before he has read the message, and does
+        // not lean on colour. Remove, force a reflow, then re-add: without
+        // that a second refusal in a row would not retrigger the animation.
+        field.classList.remove('saisie--secoue');
+        void field.offsetWidth;
+        field.classList.add('saisie--secoue');
         return;
       }
       feedback.className = 'retour';
       feedback.textContent = '';
       field.value = game.firstLetter.toUpperCase();
       field.focus();
-      refresh();
-      if (game.phase === 'terminée') finish();
+      refresh(game.rows.length - 1);
+      if (game.phase === 'terminée') {
+        const reduitMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // The row's cells stagger in over (length - 1) * 80ms, each taking a
+        // further 260ms to land; the winning row then bounces for 320ms more.
+        const finCases = (game.length - 1) * 80 + 260;
+        const attente = reduitMotion ? 0 : finCases + (game.result.won ? 320 : 0);
+        // Not the timer this project forbids: the outcome is already
+        // decided, so nothing here pressures the player mid-turn. It only
+        // delays finish() so he sees the last row land — and, on a win, its
+        // bounce — before the end screen replaces it. With reduced motion
+        // nothing plays, so the delay is zero and the end screen is not
+        // simply late for no reason.
+        setTimeout(finish, attente);
+      }
     }
 
     field.addEventListener('keydown', (event) => {
