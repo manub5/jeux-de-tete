@@ -6,6 +6,11 @@
 // that does not carry the answer cannot contradict it, which is the lesson of
 // games/motus/daily.js, where a save at odds with the rules announced a defeat
 // the player never had.
+//
+// One game at a time. Two live games built from the same storage would each
+// write their own snapshot, and moves made on one would vanish without a word.
+// The screen guarantees this by replacing the game and rebuilding the DOM; a
+// future caller must too.
 
 import { SIZE } from './grid.js';
 import { countSolutions, solve } from './solver.js';
@@ -18,6 +23,8 @@ const isBoard = (value) =>
   Array.isArray(value) && value.length === SIZE &&
   value.every((digit) => Number.isInteger(digit) && digit >= 0 && digit <= 9);
 
+const isCell = (value) => Number.isInteger(value) && value >= 0 && value < SIZE;
+
 /** A stored grid that parses but has the wrong shape must not break anything. */
 function asSaved(raw) {
   if (typeof raw !== 'object' || raw === null) return null;
@@ -27,12 +34,15 @@ function asSaved(raw) {
     ? raw.notes.map((list) =>
         Array.isArray(list) ? list.filter((n) => Number.isInteger(n) && n >= 1 && n <= 9) : [])
     : Array.from({ length: SIZE }, () => []);
+  // An array of integers in 0..80; anything else reads as none, the way an
+  // unreadable board falls back to an empty one rather than crashing.
+  const mistakes = Array.isArray(raw.mistakes) ? raw.mistakes.filter(isCell) : [];
   // Every placed digit must sit on an empty square of the puzzle, or the save
   // disagrees with its own grid.
   for (let cell = 0; cell < SIZE; cell++) {
     if (raw.puzzle[cell] && raw.values[cell] !== raw.puzzle[cell]) return null;
   }
-  return { difficulty: raw.difficulty, puzzle: raw.puzzle, values: raw.values, notes };
+  return { difficulty: raw.difficulty, puzzle: raw.puzzle, values: raw.values, notes, mistakes };
 }
 
 export function clearSave(storage) {
@@ -69,6 +79,7 @@ export function loadOrStart({ storage, rng, difficulty }) {
         solution: solve(puzzle),
         values: Int8Array.from(saved.values),
         notes: saved.notes,
+        mistakes: saved.mistakes,
       });
       return attachSaving(game, storage);
     }
