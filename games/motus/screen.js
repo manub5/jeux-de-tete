@@ -25,6 +25,27 @@ const MESSAGES = {
 export function mountMotus(container, { lexicon, stats, storage, frequencies, onQuit }) {
   let game = null;
   let daily = false;
+  // The id of the pending "show the end screen" timer, if any — see
+  // scheduleFinish() and finish() below. Kept at this scope because both
+  // "Nouvelle partie" and the router's cleanup need to reach it.
+  let finTimer = null;
+
+  /**
+   * Defers finish() so the player sees the last row land (and, on a win, its
+   * bounce) before the end screen replaces it. `pourJeu` pins down which game
+   * this timer belongs to: by the time it fires, `game` may already be a
+   * different instance — a new game started, or the daily game reloaded — and
+   * finish() must not act on a game the player never asked to end. Do not
+   * "simplify" this identity check away: it is the only thing standing between
+   * a stale timer and someone else's game.
+   */
+  function scheduleFinish(delay, pourJeu) {
+    finTimer = setTimeout(() => {
+      finTimer = null;
+      if (game !== pourJeu) return;
+      finish();
+    }, delay);
+  }
 
   function render() {
     container.replaceChildren(
@@ -164,6 +185,13 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     const feedback = element('p', { class: 'retour', role: 'status' });
 
     function submit() {
+      // The window between a winning (or losing) row landing and finish()
+      // replacing the screen: the field is refocused and refilled right
+      // before it opens, which invites exactly this. Without this guard,
+      // Entrée or "Proposer" would call game.propose on a finished game,
+      // which throws — the button would silently do nothing worse than
+      // crash unheard.
+      if (game.phase === 'terminée') return;
       const essai = field.value.trim();
       const retour = game.propose(essai);
       if (!retour.ok) {
@@ -194,7 +222,7 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
         // bounce — before the end screen replaces it. With reduced motion
         // nothing plays, so the delay is zero and the end screen is not
         // simply late for no reason.
-        setTimeout(finish, attente);
+        scheduleFinish(attente, game);
       }
     }
 
@@ -218,6 +246,15 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
   }
 
   function finish() {
+    // Whichever path reaches the end first wins: "Je donne ma langue au
+    // chat" can fire while a scheduleFinish() timer from a just-landed
+    // winning row is still pending. Cancel it here so the other path can
+    // never also run finish() — on this game (double stats) or, once the
+    // player has moved on, on whatever is on screen next.
+    if (finTimer !== null) {
+      clearTimeout(finTimer);
+      finTimer = null;
+    }
     if (game.phase !== 'terminée') game.giveUp();
     const resultat = game.result;
     stats.record('motus', resultat.score, { lowerIsBetter: true });
@@ -270,5 +307,13 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
   }
 
   render();
-  return () => {};
+  // A real cleanup, not a no-op: leaving the screen (back button, another
+  // route) while a scheduleFinish() timer is pending must not leave that
+  // timer alive to overwrite whatever the router mounts next.
+  return () => {
+    if (finTimer !== null) {
+      clearTimeout(finTimer);
+      finTimer = null;
+    }
+  };
 }
