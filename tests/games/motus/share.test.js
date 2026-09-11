@@ -17,7 +17,7 @@ test('the summary never contains a letter of any attempt, won or lost', () => {
   for (const [won, attempts] of [[true, 2], [false, 6]]) {
     const texte = summary(LIGNES, { day: '2026-09-11', won, attempts });
     const reste = texte.replace('Motus', '').replace('X/6', '');
-    assert.ok(!/[a-zA-Zà-ÿ]/.test(reste), `${won ? 'gagnée' : 'perdue'} : ${texte}`);
+    assert.ok(!/\p{L}/u.test(reste), `${won ? 'gagnée' : 'perdue'} : ${texte}`);
   }
 });
 
