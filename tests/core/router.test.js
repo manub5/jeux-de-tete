@@ -106,8 +106,9 @@ test('a route that returns something other than a function is tolerated', () => 
   assert.doesNotThrow(() => router.go('b'));
 });
 
-test('a route that throws leaves the router able to try again', () => {
+test('a route that throws once can be opened again later if it stops throwing', () => {
   let attempts = 0;
+  const errors = [];
   const router = createRouter({
     routes: {
       accueil: () => {},
@@ -120,11 +121,77 @@ test('a route that throws leaves the router able to try again', () => {
     fallback: 'accueil',
     readHash: () => '',
     writeHash: () => {},
+    onError: (error) => errors.push(error),
   });
   router.start();
-  assert.throws(() => router.go('jeu'), /montage raté/);
+  assert.doesNotThrow(() => router.go('jeu'));
+  assert.equal(errors.length, 1);
   assert.doesNotThrow(() => router.go('jeu'));
   assert.equal(attempts, 2);
+});
+
+test('a mount that throws hands the failure to onError instead of leaving a blank page', () => {
+  const seen = [];
+  const router = createRouter({
+    routes: {
+      accueil: () => {},
+      jeu: () => { throw new Error('montage raté'); },
+    },
+    container: fakeContainer(),
+    fallback: 'accueil',
+    readHash: () => '',
+    writeHash: () => {},
+    onError: (error, container) => seen.push([error.message, container]),
+  });
+  router.start();
+  assert.doesNotThrow(() => router.go('jeu'));
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0][0], 'montage raté');
+});
+
+test('a mount that throws does not leave the container holding a half-built screen', () => {
+  const children = [];
+  const container = {
+    replaceChildren(...nodes) { children.length = 0; children.push(...nodes); },
+    append(...nodes) { children.push(...nodes); },
+  };
+  const router = createRouter({
+    routes: {
+      accueil: () => {},
+      jeu: (target) => {
+        target.append('un fragment du jeu');
+        throw new Error('montage raté');
+      },
+    },
+    container,
+    fallback: 'accueil',
+    readHash: () => '',
+    writeHash: () => {},
+    onError: () => {},
+  });
+  router.start();
+  router.go('jeu');
+  assert.deepEqual(children, []);
+});
+
+test('the router can still open another route after a mount throws', () => {
+  const seen = [];
+  const router = createRouter({
+    routes: {
+      accueil: () => { seen.push('accueil'); },
+      jeu: () => { throw new Error('montage raté'); },
+      anagrammes: () => { seen.push('anagrammes'); },
+    },
+    container: fakeContainer(),
+    fallback: 'accueil',
+    readHash: () => '',
+    writeHash: () => {},
+    onError: () => {},
+  });
+  router.start();
+  router.go('jeu');
+  router.go('anagrammes');
+  assert.deepEqual(seen, ['accueil', 'anagrammes']);
 });
 
 test('a route without cleanup does not break navigation', () => {

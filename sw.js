@@ -4,7 +4,7 @@
 // CACHE_VERSION MUST be bumped on every deployment. Forgetting it is the
 // classic failure of this kind of app: the old files are served forever and
 // nobody understands why nothing changes.
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_PREFIX = 'jeux-de-tete-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -19,6 +19,7 @@ const ASSETS = [
   'css/anagrammes.css',
   'css/base.css',
   'css/mot-le-plus-long.css',
+  'css/motus.css',
   'css/tous-les-mots.css',
   'data/frequences.txt.gz',
   'data/signatures.txt.gz',
@@ -30,6 +31,12 @@ const ASSETS = [
   'games/mot-le-plus-long/draw.js',
   'games/mot-le-plus-long/game.js',
   'games/mot-le-plus-long/screen.js',
+  'games/motus/daily.js',
+  'games/motus/game.js',
+  'games/motus/marking.js',
+  'games/motus/pick.js',
+  'games/motus/screen.js',
+  'games/motus/share.js',
   'games/tous-les-mots/draw.js',
   'games/tous-les-mots/game.js',
   'games/tous-les-mots/screen.js',

@@ -8,6 +8,7 @@ export function createRouter({
   fallback,
   readHash = () => globalThis.location.hash,
   writeHash = (value) => { globalThis.location.hash = value; },
+  onError = () => {},
 }) {
   let cleanup = null;
   let current = null;
@@ -39,9 +40,24 @@ export function createRouter({
     // Only a function is a cleanup. An arrow function written without braces
     // returns whatever its expression evaluates to, and keeping that as the
     // cleanup would crash on the next navigation — a long way from the mistake.
-    const result = routes[route](container);
-    cleanup = typeof result === 'function' ? result : null;
-    current = route;
+    try {
+      const result = routes[route](container);
+      cleanup = typeof result === 'function' ? result : null;
+      current = route;
+    } catch (error) {
+      // The router has no UI of its own: it logs the technical detail once,
+      // here, and hands the failure to the caller's onError so a real screen
+      // (with a way out) can be shown. `current` is left as the `null` it was
+      // set to above, so the route can be tried again — a screen that never
+      // appeared must not be remembered as open. `cleanup` is left as the
+      // `null` it was set to above too: nothing mounted, so there is nothing
+      // to tear down on the next navigation. The container is cleared again
+      // in case the failing mount partially built a screen before throwing —
+      // he must never be left staring at a fragment of a broken page.
+      console.error('montage de route', error);
+      container.replaceChildren();
+      onError(error, container);
+    }
   }
 
   return {

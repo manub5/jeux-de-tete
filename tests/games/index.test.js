@@ -21,9 +21,9 @@ test('no game is called accueil, which is the menu itself', () => {
   assert.ok(!GAMES.some((g) => g.id === 'accueil'));
 });
 
-test('the three games of this lot are registered', () => {
+test('the four games are registered', () => {
   assert.deepEqual(GAMES.map((g) => g.id).sort(),
-    ['anagrammes', 'mot-le-plus-long', 'tous-les-mots']);
+    ['anagrammes', 'mot-le-plus-long', 'motus', 'tous-les-mots']);
 });
 
 test('needsFrequencies, when present, is a boolean, and at least one game does not need it', () => {
