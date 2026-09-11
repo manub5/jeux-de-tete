@@ -113,6 +113,27 @@ test('nothing handed out can reach back into the game', () => {
   assert.equal(jeu.rows[0].marks[0], MARKS.placed);
 });
 
+test('the answer is accepted even if he struck that word from his dictionary', () => {
+  const index = new Map();
+  for (const mot of MOTS) {
+    const clef = signature(mot);
+    if (!index.has(clef)) index.set(clef, []);
+    index.get(clef).push(mot);
+  }
+  // He struck `maison` out himself. It is still the word to find, and typing it
+  // must win rather than be refused.
+  const lexicon = createLexicon(index, {
+    accepted: new Set(), rejected: new Set(['maison']), save() {},
+  });
+  const jeu = createMotus({
+    lexicon, rng: createRng(1), frequencies: new Map([['maison', 10]]),
+    length: 6, word: 'maison',
+  });
+  assert.equal(jeu.propose('maison').ok, true);
+  assert.equal(jeu.phase, 'terminée');
+  assert.equal(jeu.result.won, true);
+});
+
 test('without a word given, one is drawn for the length asked', () => {
   const jeu = createMotus({
     lexicon: build(),
