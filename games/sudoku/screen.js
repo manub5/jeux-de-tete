@@ -7,6 +7,11 @@ import { DIFFICULTIES } from './generate.js';
 import { SAVE_KEY, clearSave, loadOrStart } from './save.js';
 
 const LABELS = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
+// The same three levels as an adjective agreeing with "grille", which is
+// feminine: lowercasing the button labels gave "Une grille moyen est en
+// cours." Only "moyen" changes form, but the three are spelled out so the
+// sentence never has to guess.
+const NIVEAUX_FEMININ = { facile: 'facile', moyen: 'moyenne', difficile: 'difficile' };
 
 export function mountSudoku(container, { stats, storage, onQuit }) {
   let game = null;
@@ -45,7 +50,7 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
     const children = [];
     if (enCours && Object.hasOwn(LABELS, enCours.difficulty)) {
       children.push(
-        element('p', { text: `Une grille ${LABELS[enCours.difficulty].toLowerCase()} est en cours.` }),
+        element('p', { text: `Une grille ${NIVEAUX_FEMININ[enCours.difficulty]} est en cours.` }),
         button('Reprendre', () => { start(enCours.difficulty); })
       );
     }
