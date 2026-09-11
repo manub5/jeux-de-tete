@@ -66,7 +66,19 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
   }
 
   function renderGame() {
-    const grille = element('div', { class: 'grille-sudoku', role: 'grid', 'aria-label': 'Grille de sudoku' });
+    // No `role="grid"` here, and nothing in its place. A grid role is a
+    // *composite* role: declared, it makes the screen reader stop announcing
+    // the 81 buttons and start announcing rows and cells — which this markup
+    // does not have, and whose keyboard model (roving focus, arrow keys,
+    // aria-activedescendant) this game does not implement. A grid announced
+    // and not walkable is worse than no grid at all. The four other games
+    // declare no composite role either — Motus's own six rows of squares are
+    // plain divs — and `role="status"` on a live region is the only role in
+    // the project. What the player on a screen reader actually gets is each
+    // cell's own label below: "ligne 3, colonne 5, 7", or "vide", or
+    // ", en conflit". `aria-label` went with the role: on a div with no role
+    // it is a name nothing is allowed to carry, which readers drop.
+    const grille = element('div', { class: 'grille-sudoku' });
     const compteur = element('p', { class: 'sous-titre', role: 'status' });
 
     // Abandoning a grid is a two-step action, like "Abandonner ces lettres"
