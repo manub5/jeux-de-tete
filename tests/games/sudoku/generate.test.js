@@ -67,9 +67,20 @@ test('every puzzle is solvable by the techniques its level allows', () => {
 test('a hard puzzle genuinely requires its technique, not merely allows it', () => {
   // C'est l'exigence que la mesure a imposée : sans elle les trois niveaux se
   // ressemblent, et « difficile » n'est qu'une étiquette.
-  const { puzzle } = generate(createRng(51), 'difficile');
-  assert.equal(logicalSolve(puzzle, LEVELS.singles).solved, false,
-    'une grille difficile ne doit pas céder aux seuls singletons');
+  //
+  // Les graines ne sont pas interchangeables ici, et celles-ci sont mesurées.
+  // Le premier tirage d'une graine est souvent déjà dur tout seul : avec le
+  // filet `mustRequire` neutralisé dans generate.js:79, 37 graines sur les
+  // 100 premières rendaient quand même une grille que les singletons ne
+  // finissent pas. La graine 51, qu'employait ce test, en faisait partie — il
+  // restait donc vert sans le filet qu'il prétend tenir. Les trois ci-dessous
+  // sont du côté des 63 autres, chacune séparément. Ne les remplacer qu'en
+  // refaisant la mesure.
+  for (const graine of [101, 111, 121]) {
+    const { puzzle } = generate(createRng(graine), 'difficile');
+    assert.equal(logicalSolve(puzzle, LEVELS.singles).solved, false,
+      `une grille difficile ne doit pas céder aux seuls singletons (graine ${graine})`);
+  }
 });
 
 test('an easy puzzle is not accidentally hard', () => {
