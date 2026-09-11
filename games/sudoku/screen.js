@@ -144,7 +144,11 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       rng: createRng(seedFromString(String(Date.now()))),
     });
     selected = -1;
-    render();
+    // A save is written by the move itself, so an app killed between the last
+    // digit and the end screen leaves a complete grid in storage: it comes
+    // back already finished, and he must see the ending, not a frozen board.
+    if (game.phase === 'terminée') finish();
+    else render();
   }
 
   render();
