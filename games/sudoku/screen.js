@@ -12,6 +12,26 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
   let game = null;
   let selected = -1;
   let noting = false;
+  // The id of the pending "show the end screen" timer, if any — see
+  // scheduleFinish() and finish() below. Kept at this scope because both a
+  // fresh start() and the router's cleanup need to reach it.
+  let finTimer = null;
+
+  /**
+   * Defers finish() so the player sees the last digit land before the end
+   * screen replaces the grid. `pourJeu` pins down which game this timer
+   * belongs to: by the time it fires, `game` may already be a different
+   * instance — a new grid started, or the current one abandoned, while the
+   * timer was pending. finish() must not act on a game the player never
+   * asked to end. Same shape as games/motus/screen.js's scheduleFinish.
+   */
+  function scheduleFinish(delay, pourJeu) {
+    finTimer = setTimeout(() => {
+      finTimer = null;
+      if (game !== pourJeu) return;
+      finish();
+    }, delay);
+  }
 
   function render() {
     container.replaceChildren(
@@ -44,6 +64,21 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
     const grille = element('div', { class: 'grille-sudoku', role: 'grid', 'aria-label': 'Grille de sudoku' });
     const compteur = element('p', { class: 'sous-titre', role: 'status' });
 
+    // Abandoning a grid is a two-step action, like "Abandonner ces lettres"
+    // in games/tous-les-mots/screen.js: a grid can represent days of play, and
+    // a stray tap must not destroy it. The first tap only relabels the
+    // button; every other control on this screen that stays on screen (a
+    // cell, a digit, Effacer, Annuler, Refaire, Notes) puts it back through
+    // resetAbandon(). "Reprendre plus tard" and the abandon button itself are
+    // the only ones that don't call it — one leaves the screen entirely
+    // (tearing the button down with the DOM), the other is the armed action.
+    let abandonConfirm = false;
+    function resetAbandon() {
+      if (!abandonConfirm) return;
+      abandonConfirm = false;
+      abandonner.textContent = 'Abandonner cette grille';
+    }
+
     function refresh() {
       const conflits = game.conflicts;
       grille.replaceChildren(
@@ -61,7 +96,7 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
             class: classes.join(' '),
             type: 'button',
             'aria-label': conflits.has(cell) ? `${etiquette}, en conflit` : etiquette,
-            onClick: () => { selected = cell; refresh(); },
+            onClick: () => { resetAbandon(); selected = cell; refresh(); },
           }, valeur
             ? [element('span', { class: 'chiffre-sudoku', text: String(valeur) })]
             : notes.map((n) => element('span', { class: 'note-sudoku', text: String(n) })));
@@ -74,11 +109,19 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
     }
 
     function poser(valeur) {
+      resetAbandon();
       if (selected < 0 || game.phase === 'terminée') return;
       if (noting) game.toggleNote(selected, valeur);
       else game.place(selected, valeur);
       refresh();
-      if (game.phase === 'terminée') finish();
+      if (game.phase === 'terminée') {
+        const reduitMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Not the timer this project forbids: the outcome is already decided,
+        // so nothing here pressures the player mid-turn. It only delays
+        // finish() so he sees the last digit land before the end screen
+        // replaces the grid.
+        scheduleFinish(reduitMotion ? 0 : 300, game);
+      }
     }
 
     const clavier = element('div', { class: 'clavier-sudoku' },
@@ -86,20 +129,51 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
         button(String(i + 1), () => poser(i + 1), { className: 'touche-sudoku' })
       ).concat(
         button('Effacer', () => {
-          if (selected >= 0) { game.erase(selected); refresh(); }
+          resetAbandon();
+          // A pending scheduleFinish() (the grid was just completed) leaves
+          // this button live a moment longer: guard the same way poser()
+          // does, or game.erase() throws on a finished game.
+          if (selected < 0 || game.phase === 'terminée') return;
+          game.erase(selected);
+          refresh();
         }, { className: 'touche-sudoku touche-sudoku--large' })
       )
     );
 
-    const annuler = button('Annuler', () => { game.undo(); refresh(); },
-      { className: 'bouton bouton--discret' });
-    const refaire = button('Refaire', () => { game.redo(); refresh(); },
-      { className: 'bouton bouton--discret' });
+    const annuler = button('Annuler', () => {
+      resetAbandon();
+      if (game.phase === 'terminée') return;
+      game.undo();
+      refresh();
+    }, { className: 'bouton bouton--discret' });
+    const refaire = button('Refaire', () => {
+      resetAbandon();
+      if (game.phase === 'terminée') return;
+      game.redo();
+      refresh();
+    }, { className: 'bouton bouton--discret' });
     const notes = button('Notes : non', () => {
+      resetAbandon();
       noting = !noting;
       notes.textContent = `Notes : ${noting ? 'oui' : 'non'}`;
       notes.setAttribute('aria-pressed', String(noting));
     }, { className: 'bouton bouton--discret', 'aria-pressed': 'false' });
+
+    const abandonner = button('Abandonner cette grille', () => {
+      if (!abandonConfirm) {
+        abandonConfirm = true;
+        abandonner.textContent = 'Confirmer l’abandon';
+        return;
+      }
+      if (finTimer !== null) {
+        clearTimeout(finTimer);
+        finTimer = null;
+      }
+      clearSave(storage);
+      game = null;
+      selected = -1;
+      render();
+    }, { className: 'bouton bouton--discret' });
 
     refresh();
 
@@ -109,17 +183,21 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       clavier,
       element('div', { class: 'actions' }, [annuler, refaire]),
       notes,
-      button('Abandonner cette grille', () => {
-        clearSave(storage);
-        game = null;
-        selected = -1;
-        render();
-      }, { className: 'bouton bouton--discret' }),
       button('Reprendre plus tard', onQuit, { className: 'bouton bouton--discret' }),
+      abandonner,
     ]);
   }
 
   function finish() {
+    // Cancel any pending scheduleFinish() first, as its first action, so a
+    // second path to finish() — today only start()'s synchronous check on a
+    // grid that was already complete on load — can never also fire a stale
+    // timer later: on this game (double stats) or on whatever the player has
+    // navigated to since. Same shape as games/motus/screen.js's finish().
+    if (finTimer !== null) {
+      clearTimeout(finTimer);
+      finTimer = null;
+    }
     const resultat = game.finish();
     clearSave(storage);
     // Fewer mistakes is better, like Motus counts attempts — core/stats.js needs
@@ -144,6 +222,11 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       rng: createRng(seedFromString(String(Date.now()))),
     });
     selected = -1;
+    // renderGame() always builds the notes toggle with the hardcoded label
+    // "Notes : non": without this reset, notes left on in a previous grid
+    // would silently survive into this one while the button still claimed
+    // they were off, turning every digit press into a pencil mark.
+    noting = false;
     // A save is written by the move itself, so an app killed between the last
     // digit and the end screen leaves a complete grid in storage: it comes
     // back already finished, and he must see the ending, not a frozen board.
@@ -152,5 +235,13 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
   }
 
   render();
-  return () => {};
+  // A real cleanup, not a no-op: leaving the screen (back button, another
+  // route) while a scheduleFinish() timer is pending must not leave that
+  // timer alive to overwrite whatever the router mounts next.
+  return () => {
+    if (finTimer !== null) {
+      clearTimeout(finTimer);
+      finTimer = null;
+    }
+  };
 }
