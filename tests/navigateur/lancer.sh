@@ -82,4 +82,6 @@ if [[ "${#echecs[@]}" -gt 0 ]]; then
   echo "Essais en échec : ${echecs[*]}" >&2
   exit 1
 fi
-echo "Les quatre essais passent."
+# Counted, not written down: the sentence was still saying "four" the day a
+# fifth script landed, and a summary that miscounts is a summary nobody reads.
+echo "Les ${#ESSAIS[@]} essais passent."
