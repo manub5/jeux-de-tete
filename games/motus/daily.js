@@ -26,7 +26,7 @@ function asSaved(raw, day) {
   return { rows, finished: raw.finished === true };
 }
 
-export function createDaily({ lexicon, storage, frequencies, day }) {
+export function createDaily({ lexicon, storage, frequencies, day, mayRestart = true }) {
   const word = dailyWord(frequencies, day);
   const game = createMotus({ lexicon, frequencies, length: DAILY_LENGTH, word });
   const saved = asSaved(storage.get(SAVE_KEY, null), day);
@@ -53,7 +53,14 @@ export function createDaily({ lexicon, storage, frequencies, day }) {
       // short grid would be a quiet lie. Start the day again: handing him back
       // a puzzle is honest, telling him he lost is not.
       storage.remove(SAVE_KEY);
-      return createDaily({ lexicon, storage, frequencies, day });
+      // One restart, never two. `storage.remove` swallows a failing backend
+      // rather than throwing, so a browser that refuses to forget would send us
+      // round this path for ever — and an application that will not open is the
+      // one failure he could not diagnose. A second pass plays on with whatever
+      // replayed instead.
+      if (mayRestart) {
+        return createDaily({ lexicon, storage, frequencies, day, mayRestart: false });
+      }
     }
     // Every row replayed, so the save is faithful. A save marked finished whose
     // rows did not end the game means he gave up — that is what giveUp()

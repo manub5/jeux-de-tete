@@ -120,6 +120,17 @@ test('a save whose rows are not an array is replaced, not kept', () => {
   assert.deepEqual(store.get(SAVE_KEY, null).rows, []);
 });
 
+test('a storage that refuses to forget does not send the day round for ever', () => {
+  const back = backend();
+  back.setItem('jp:motus.jour',
+    JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: true }));
+  // A backend that accepts writes but never actually forgets: without a bound on
+  // the restart, this recurses until the stack gives out.
+  back.removeItem = () => {};
+  const jour = createDaily({ ...outils(createStorage(back)), day: '2026-09-11' });
+  assert.equal(jour.game.attempts, 0);
+});
+
 test('a day he gave up on stays given up, and is not handed back to him', () => {
   // Giving up is not an attempt, so the rows cannot replay to an ending. That
   // is not corruption, and the day must not start over.
