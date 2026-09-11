@@ -72,6 +72,21 @@ function showFailure(error, retry) {
   );
 }
 
+/** Shown when a game's mount throws — router.js has already logged the
+ *  technical detail to the console, so this only has to get him back to a
+ *  working page, in the same voice as showFailure. It must never mention the
+ *  dictionary: that is a different failure, and naming a problem he does not
+ *  have would only confuse him further. */
+function showGameFailure() {
+  container.replaceChildren(
+    element('h1', { text: 'Jeu indisponible' }),
+    element('p', {
+      text: 'Ce jeu n’a pas pu s’ouvrir. Retourne au menu et réessaie.',
+    }),
+    button('Retour au menu', () => router.go('accueil'))
+  );
+}
+
 // Set once per start(), from whether the (optional) frequency file could be
 // loaded. Read here so home() stays a plain function of `target`, matching
 // every other route.
@@ -144,7 +159,7 @@ async function start() {
       routes[game.id] = (target) => game.mount(target, tools);
     }
 
-    router = createRouter({ routes, container, fallback: 'accueil' });
+    router = createRouter({ routes, container, fallback: 'accueil', onError: showGameFailure });
     router.start();
     if (!hashListenerAttached) {
       globalThis.addEventListener('hashchange', () => router.start());
