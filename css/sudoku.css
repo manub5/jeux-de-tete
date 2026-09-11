@@ -3,7 +3,8 @@
 /* Every class here is prefixed with the game's name. All stylesheets are linked
    globally, so an unprefixed class silently overrides another game's — and the
    later sheet wins. Anything genuinely shared belongs in base.css. Custom
-   properties are just as global as classes, so this one is prefixed too. */
+   properties are just as global as classes; this sheet declares none of its
+   own, and tests/css/collisions.test.js watches both. */
 
 /* The conflicting cell's text is `--texte-sur-erreur`, in base.css: the same
    role as Motus's placed cell, on the same background, so it is one token for
@@ -45,22 +46,23 @@
 }
 
 .case-sudoku--indice { color: var(--texte); font-weight: 700; }
-/* La case choisie : un anneau de 4 px en deux temps, l'accent à l'extérieur et
-   un liseré de la couleur du papier à l'intérieur, contre le fond de la case.
-   Un seul ton n'y suffisait pas : le contour d'accent seul tombait à 1,23:1 en
-   clair et 1,06:1 en sombre sur une case en conflit, et `poser()` laisse
-   justement la sélection sur la case fautive — donc toute erreur effaçait le
-   repère du prochain appui. Aucune couleur unique ne peut y arriver en sombre :
-   il faudrait être à la fois plus clair que #1f2226 et plus sombre que #ff8080
-   de 3:1, ce qui est arithmétiquement impossible. C'est donc le liseré intérieur
-   qui borde le fond, et c'est lui qu'on mesure, WCAG 1.4.11, 3:1 exigé.
-   Ratios calculés avec la formule de luminance relative WCAG :
-   clair  — accent #1f6f4a sur fond de case #ffffff : 6,12:1
-   clair  — liseré #ffffff sur fond de conflit #a32020 : 7,54:1
-   sombre — accent #4fbf8b sur fond de case #1f2226 : 6,96:1
-   sombre — liseré #1f2226 sur fond de conflit #ff8080 : 6,58:1
-   Les deux anneaux se distinguent aussi l'un de l'autre (6,12:1 et 6,96:1), donc
-   l'anneau reste lisible comme un tout. */
+/* The selected cell: a 4 px ring in two bands, the accent outside and a band of
+   the card colour inside, against the cell's own background. One flat colour
+   could not do it. The accent ring alone fell to 1.23:1 in light and 1.06:1 in
+   dark on a conflicting cell — and poser() leaves the selection right there, so
+   every mistake erased the mark showing which cell the next tap would change.
+   No single colour can clear 3:1 against both dark backgrounds: it would have
+   to be lighter than #1f2226 and darker than #ff8080 by 3:1 at once, which is
+   arithmetically impossible. So it is the inner band that borders the
+   background, and the inner band that gets measured — WCAG 1.4.11 asks 3:1 for
+   an interface element that carries information. Ratios computed with the WCAG
+   relative-luminance formula:
+   light — accent #1f6f4a on cell background #ffffff: 6.12:1
+   light — inner band #ffffff on conflict background #a32020: 7.54:1
+   dark  — accent #4fbf8b on cell background #1f2226: 6.96:1
+   dark  — inner band #1f2226 on conflict background #ff8080: 6.58:1
+   The two bands also stand apart from each other (6.12:1 and 6.96:1), so the
+   ring reads as one shape whichever cell it lands on. */
 .case-sudoku--choisie {
   box-shadow:
     inset 0 0 0 2px var(--accent),
@@ -75,18 +77,18 @@
 .case-sudoku--conflit::after {
   content: '✕';
   position: absolute;
-  /* En retrait de l'épaisseur de l'anneau de sélection : posé à 1 px et 2 px du
-     coin, le marqueur mordait cet anneau et le coupait justement sur la case
-     fautive, où il est le plus utile. */
+  /* Set back by the thickness of the selection ring: at 1 px and 2 px from the
+     corner the mark bit into that ring and broke it on the conflicting cell,
+     which is exactly where the ring matters most. */
   top: 4px;
   right: 4px;
-  /* 12 px pleins, mesurés au rendu. En `0.55rem` il en faisait 8,8 : `1rem` vaut
-     16 px, la taille par défaut du navigateur, parce que `--corps: 18px` est
-     déclaré sur `:root` mais appliqué sur `body` (voir css/base.css). Moins de
-     la moitié du plancher, pour le seul signal qui remplace la couleur. En
-     pixels, il ne dépend plus de cet écart. Plus grand, il toucherait le
-     chiffre : celui-ci occupe 11,45 px de large au centre d'une case de
-     35,11 px, et l'anneau de sélection en prend 4 de plus dans le coin. */
+  /* A full 12 px, measured in the browser. Written `0.55rem` it rendered 8.8:
+     `1rem` is the browser's default 16 px, not 18, because `--corps` is
+     declared on `:root` but applied on `body` (see css/base.css). Less than
+     half the project's floor, for the one signal that stands in for colour.
+     In pixels it no longer depends on that gap. Bigger would touch the digit:
+     that one takes 11.45 px across the middle of a 35.11 px cell, and the
+     selection ring takes 4 more out of the corner. */
   font-size: 12px;
   line-height: 1;
   color: currentColor;
@@ -104,11 +106,11 @@
 .note-sudoku { font-size: 0.6rem; color: var(--texte-faible); }
 .case-sudoku:not(.case-sudoku--indice) > .note-sudoku:nth-child(n+2) { margin-left: 1px; }
 
-/* Une rangée d'actions, à parts égales. Même effet que `.actions` dans
-   css/mot-le-plus-long.css, mais sous le nom de ce jeu : toutes les feuilles
-   sont liées globalement, et emprunter la classe d'un autre jeu rendait la mise
-   en page du sudoku dépendante d'une règle qui, chez lui, a l'air morte.
-   Le contrôle qui l'interdit est dans tests/css/collisions.test.js. */
+/* A row of actions sharing the width. Same effect as `.actions` in
+   css/mot-le-plus-long.css, under this game's own name: every sheet is linked
+   globally, and borrowing another game's class left the sudoku's layout resting
+   on a rule that looks dead where it lives. The check that forbids it is in
+   tests/css/collisions.test.js. */
 .actions-sudoku {
   display: flex;
   gap: var(--marge);
@@ -116,8 +118,8 @@
 
 .actions-sudoku > .bouton { flex: 1; }
 
-/* Un écart entre la rangée qui agit sur la grille et celle qui la quitte : de
-   quoi ne pas toucher « Abandonner » en visant « Notes ». */
+/* A gap between the row that acts on the grid and the row that leaves it:
+   enough not to hit "Abandonner" while aiming for "Notes". */
 .actions-sudoku + .actions-sudoku { margin-top: var(--marge); }
 
 .clavier-sudoku {
