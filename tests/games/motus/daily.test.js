@@ -96,3 +96,36 @@ test('a saved row that is no longer a valid attempt is dropped, not replayed', (
   const jour = createDaily({ ...outils(createStorage(back)), day: '2026-09-11' });
   assert.equal(jour.game.attempts, 0);
 });
+
+test('a finished save the rules can no longer replay starts the day over', () => {
+  const back = backend();
+  // Marked finished, but the only attempt is not a word: the replay cannot
+  // reach the end, so the day must start again rather than report a loss.
+  back.setItem('jp:motus.jour',
+    JSON.stringify({ day: '2026-09-11', rows: ['zzzzzzz'], finished: true }));
+  const store = createStorage(back);
+  const jour = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(jour.alreadyPlayed, false);
+  assert.equal(jour.result, null);
+  assert.equal(jour.game.attempts, 0);
+  assert.equal(store.get(SAVE_KEY, null).finished, false);
+});
+
+test('a save whose rows are not an array is replaced, not kept', () => {
+  const back = backend();
+  back.setItem('jp:motus.jour',
+    JSON.stringify({ day: '2026-09-11', rows: 'pas un tableau', finished: false }));
+  const store = createStorage(back);
+  createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.deepEqual(store.get(SAVE_KEY, null).rows, []);
+});
+
+test('a day he gave up on stays given up, and is not handed back to him', () => {
+  // Giving up is not an attempt, so the rows cannot replay to an ending. That
+  // is not corruption, and the day must not start over.
+  const store = createStorage(backend());
+  createDaily({ ...outils(store), day: '2026-09-11' }).game.giveUp();
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.alreadyPlayed, true);
+  assert.equal(reprise.result.won, false);
+});
