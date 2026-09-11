@@ -67,22 +67,35 @@ export function attachSaving(game, storage) {
   return game;
 }
 
-export function loadOrStart({ storage, rng, difficulty }) {
+/**
+ * The saved game, when there really is one to take up — and `null` otherwise.
+ *
+ * The menu asks this before offering "Reprendre", and loadOrStart asks this
+ * before resuming: one answer, so the button cannot appear on a save the
+ * resume would then throw away. games/motus/daily.js does the same thing by
+ * building the day's game in the menu rather than trusting what is stored.
+ */
+export function resumableSave(storage) {
   const saved = asSaved(storage.get(SAVE_KEY, null));
+  if (!saved) return null;
+  const puzzle = Int8Array.from(saved.puzzle);
+  // A save whose puzzle is not a real puzzle any more is not a save.
+  if (countSolutions(puzzle, 2) !== 1) return null;
+  return { ...saved, puzzle };
+}
+
+export function loadOrStart({ storage, rng, difficulty }) {
+  const saved = resumableSave(storage);
   if (saved) {
-    const puzzle = Int8Array.from(saved.puzzle);
-    // A save whose puzzle is not a real puzzle any more is not a save.
-    if (countSolutions(puzzle, 2) === 1) {
-      const game = createSudoku({
-        difficulty: saved.difficulty,
-        puzzle,
-        solution: solve(puzzle),
-        values: Int8Array.from(saved.values),
-        notes: saved.notes,
-        mistakes: saved.mistakes,
-      });
-      return attachSaving(game, storage);
-    }
+    const game = createSudoku({
+      difficulty: saved.difficulty,
+      puzzle: saved.puzzle,
+      solution: solve(saved.puzzle),
+      values: Int8Array.from(saved.values),
+      notes: saved.notes,
+      mistakes: saved.mistakes,
+    });
+    return attachSaving(game, storage);
   }
   const { puzzle, solution } = generate(rng, difficulty);
   const game = attachSaving(createSudoku({ difficulty, puzzle, solution }), storage);

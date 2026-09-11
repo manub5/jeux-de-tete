@@ -4,7 +4,7 @@
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
 import { DIFFICULTIES } from './generate.js';
-import { SAVE_KEY, clearSave, loadOrStart } from './save.js';
+import { clearSave, loadOrStart, resumableSave } from './save.js';
 
 const LABELS = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
 // The same three levels as an adjective agreeing with "grille", which is
@@ -46,9 +46,13 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
   }
 
   function renderMenu() {
-    const enCours = storage.get(SAVE_KEY, null);
+    // The same answer the resume itself will give, not a lighter look at
+    // storage: "Reprendre" must never appear on a save that loadOrStart would
+    // then throw away, leaving him on a brand new grid he did not ask for.
+    // Motus's menu validates the same way, by building the day's game.
+    const enCours = resumableSave(storage);
     const children = [];
-    if (enCours && Object.hasOwn(LABELS, enCours.difficulty)) {
+    if (enCours) {
       children.push(
         element('p', { text: `Une grille ${NIVEAUX_FEMININ[enCours.difficulty]} est en cours.` }),
         button('Reprendre', () => { start(enCours.difficulty); })

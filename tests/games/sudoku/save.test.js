@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRng } from '../../../core/rng.js';
 import { createStorage } from '../../../core/storage.js';
 import { generate } from '../../../games/sudoku/generate.js';
-import { SAVE_KEY, clearSave, loadOrStart } from '../../../games/sudoku/save.js';
+import { SAVE_KEY, clearSave, loadOrStart, resumableSave } from '../../../games/sudoku/save.js';
 
 function backendWith(entries = {}) {
   const map = new Map(Object.entries(entries));
@@ -198,6 +198,29 @@ test('the mistakes read back from a save are cells of the grid', () => {
   const pasUneListe = stockageAvec(sauvegarde(26, { mistakes: 'trois' }));
   const autre = loadOrStart({ storage: pasUneListe, rng: createRng(28), difficulty: 'facile' });
   assert.equal(autre.mistakes, 0, 'un compte illisible se lit comme aucune erreur');
+});
+
+test('what the menu offers and what the resume does are one decision', () => {
+  // Le menu décidait « Reprendre » sur un contrôle plus léger que celui de la
+  // reprise : le bouton apparaissait, il appuyait, et la reprise distribuait
+  // une grille neuve — la sienne partie, sans un mot.
+  const vide = new Array(81).fill(0);
+  for (const [quoi, sauvee] of [
+    ['une grille sans réponse unique', sauvegarde(30, { puzzle: vide, values: vide })],
+    ['un niveau inconnu', sauvegarde(30, { difficulty: 'impossible' })],
+    ['un plateau qui n’en est pas un', sauvegarde(30, { values: 'trois' })],
+  ]) {
+    const storage = stockageAvec(sauvee);
+    assert.equal(resumableSave(storage), null, `${quoi} : rien à reprendre`);
+    const jeu = loadOrStart({ storage, rng: createRng(31), difficulty: 'moyen' });
+    assert.equal(jeu.difficulty, 'moyen', `${quoi} : la reprise n’en veut pas non plus`);
+  }
+
+  // L'auto-test : une sauvegarde entière est bien offerte à la reprise.
+  const bonne = stockageAvec(sauvegarde(32));
+  assert.equal(resumableSave(bonne)?.difficulty, 'facile');
+  assert.equal(loadOrStart({ storage: bonne, rng: createRng(33), difficulty: 'moyen' }).difficulty,
+    'facile');
 });
 
 test('undo and redo are written down like any other move', () => {

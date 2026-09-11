@@ -127,6 +127,17 @@ ACCESSIBILITE = """() => {
   };
 }"""
 
+#: A save the menu used to accept and the resume always refused: the level is
+#: one of the three, but the puzzle is empty, so it has thousands of answers
+#: and no single grid to come back to.
+SAUVEGARDE_IMPOSSIBLE = """() => localStorage.setItem('jp:sudoku.partie', JSON.stringify({
+  difficulty: 'facile',
+  puzzle: new Array(81).fill(0),
+  values: new Array(81).fill(0),
+  notes: Array.from({ length: 81 }, () => []),
+  mistakes: [],
+}))"""
+
 ETAT = """() => ({
   titre: document.querySelector('#app h1') ? document.querySelector('#app h1').textContent : null,
   scores: document.querySelectorAll('.score').length,
@@ -599,6 +610,36 @@ with sync_playwright() as pw:
         relancee["stats"]["played"] == parties_avant,
         "la grille abandonnée n'est comptée dans aucune statistique",
     )
+
+    # --- Correctif 8 -------------------------------------------------------
+    # Mutant that must turn this red: have renderMenu() read the save straight
+    # from storage again (`storage.get(SAVE_KEY, null)` plus a look at its
+    # `difficulty`) instead of asking resumableSave(). The menu then offers
+    # "Reprendre" on a save the resume itself refuses: he presses it and lands
+    # on a brand new grid, his own gone, with nothing said.
+    dit("== Correctif 8 : « Reprendre » n'est proposé que si la reprise aboutit ==")
+    au_menu(page)
+    page.evaluate(SAUVEGARDE_IMPOSSIBLE)
+    page.click("text=Sudoku")
+    page.wait_for_selector("text=Ou une nouvelle grille")
+    exige(
+        commande(page, "^Reprendre$").count() == 0,
+        "une sauvegarde que la reprise refuse ne propose pas « Reprendre »",
+    )
+    # L'auto-test : sur une vraie partie en cours, le bouton est bien là.
+    niveau_bouton(page, "Facile").click()
+    page.wait_for_selector(".grille-sudoku")
+    premiere = page.evaluate(VIDES)[0]
+    page.locator(".case-sudoku").nth(premiere).click()
+    page.click(".touche-sudoku >> text='1'")
+    au_menu(page)
+    page.click("text=Sudoku")
+    page.wait_for_selector("text=Ou une nouvelle grille")
+    exige(
+        commande(page, "^Reprendre$").count() == 1,
+        "une vraie partie en cours, elle, est bien proposée à la reprise",
+    )
+    page.evaluate("() => localStorage.removeItem('jp:sudoku.partie')")
 
     dit("== Hors ligne ==")
     page.goto(BASE, wait_until="networkidle")
