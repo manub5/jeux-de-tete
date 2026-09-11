@@ -5,7 +5,11 @@
 // It never guesses. Where it stops, a person using those techniques stops too.
 
 import {
+  ALL,
+  BOXES,
+  COLUMNS,
   GROUPS,
+  ROWS,
   SIZE,
   bitOf,
   candidatesOf,
@@ -27,11 +31,14 @@ function candidateTable(grid) {
 /**
  * Write a digit and keep the candidate table true.
  *
- * The table is built once per pass, so a placement must clear its own bit from
- * the twenty cells that can see it. Without this, a later group in the same pass
- * still sees the digit as possible there, believes it has only one place left,
- * and writes it a second time — the solver then reports a grid it has corrupted
- * as solved. Refreshing the whole table would cost eighty times as much.
+ * `logicalSolve` builds the table once and carries it through the whole solve
+ * (see below), so a placement must clear its own bit from the twenty cells
+ * that can see it. Without this, a later group in the same pass still sees the
+ * digit as possible there, believes it has only one place left, and writes it
+ * a second time — the solver then reports a grid it has corrupted as solved.
+ * Refreshing the whole table from scratch would cost eighty times as much —
+ * and, once eliminations are in play, would also throw away candidate
+ * narrowing that no placed digit accounts for (see `logicalSolve`).
  */
 function apply(grid, table, cell, value) {
   grid[cell] = value;
@@ -75,18 +82,121 @@ function placeHiddenSingles(grid, table) {
 }
 
 /**
+ * Two cells of a group holding exactly the same two candidates. Those two
+ * digits belong to them, so they leave the rest of the group.
+ */
+function eliminateNakedPairs(grid, table) {
+  let removed = false;
+  for (const group of GROUPS) {
+    const empty = group.filter((cell) => !grid[cell]);
+    for (let i = 0; i < empty.length; i++) {
+      for (let j = i + 1; j < empty.length; j++) {
+        const mask = table[empty[i]];
+        if (countBits(mask) !== 2 || table[empty[j]] !== mask) continue;
+        for (const cell of empty) {
+          if (cell === empty[i] || cell === empty[j]) continue;
+          if (table[cell] & mask) {
+            table[cell] &= ~mask;
+            removed = true;
+          }
+        }
+      }
+    }
+  }
+  return removed;
+}
+
+/**
+ * Two digits of a group appearing in the same two cells and nowhere else. Those
+ * cells are theirs, so everything else leaves the cells.
+ */
+function eliminateHiddenPairs(grid, table) {
+  let removed = false;
+  for (const group of GROUPS) {
+    const empty = group.filter((cell) => !grid[cell]);
+    for (let first = 1; first <= 9; first++) {
+      for (let second = first + 1; second <= 9; second++) {
+        const mask = bitOf(first) | bitOf(second);
+        const holdingFirst = empty.filter((cell) => table[cell] & bitOf(first));
+        const holdingSecond = empty.filter((cell) => table[cell] & bitOf(second));
+        if (holdingFirst.length !== 2 || holdingSecond.length !== 2) continue;
+        if (holdingFirst[0] !== holdingSecond[0] || holdingFirst[1] !== holdingSecond[1]) continue;
+        for (const cell of holdingFirst) {
+          if (table[cell] & ~mask & ALL) {
+            table[cell] &= mask;
+            removed = true;
+          }
+        }
+      }
+    }
+  }
+  return removed;
+}
+
+/**
+ * A digit confined to one line inside a box must be on that line, so it leaves
+ * the rest of the line outside the box. And the mirror case, a digit confined
+ * to one box inside a line.
+ */
+function eliminateIntersections(grid, table) {
+  let removed = false;
+  for (let box = 0; box < 9; box++) {
+    const cells = BOXES[box];
+    for (let value = 1; value <= 9; value++) {
+      const bit = bitOf(value);
+      const holding = cells.filter((cell) => !grid[cell] && table[cell] & bit);
+      if (holding.length < 2) continue;
+
+      const row = Math.floor(holding[0] / 9);
+      if (holding.every((cell) => Math.floor(cell / 9) === row)) {
+        for (const cell of ROWS[row]) {
+          if (cells.includes(cell) || grid[cell]) continue;
+          if (table[cell] & bit) {
+            table[cell] &= ~bit;
+            removed = true;
+          }
+        }
+      }
+
+      const column = holding[0] % 9;
+      if (holding.every((cell) => cell % 9 === column)) {
+        for (const cell of COLUMNS[column]) {
+          if (cells.includes(cell) || grid[cell]) continue;
+          if (table[cell] & bit) {
+            table[cell] &= ~bit;
+            removed = true;
+          }
+        }
+      }
+    }
+  }
+  return removed;
+}
+
+/**
  * Solve as far as the allowed techniques reach.
  *
  * `hardest` is the most advanced level actually needed, which is what the spec
  * calls difficulty — and the reason it is returned rather than inferred: a grid
  * that *may* use pairs but never has to is an easy grid wearing a hard label.
+ *
+ * The candidate table is built exactly once, before the loop, and carried
+ * through every pass rather than rebuilt from the grid each time. Singles
+ * alone would not care either way — `apply` keeps the table exactly in step
+ * with the grid, so a fresh rebuild and the carried table always agree. But an
+ * elimination narrows the table for a reason no placed digit records: a
+ * rebuild from the grid would silently undo it, the same naked pair would be
+ * "found" again next pass, and the loop would spin on it forever without ever
+ * reaching hidden pairs or intersections. Carrying the table is what lets the
+ * three techniques compound across passes instead of relitigating the same
+ * one.
  */
 export function logicalSolve(grid, maxLevel) {
   const working = Int8Array.from(grid);
   let hardest = 0;
+  const table = candidateTable(working);
 
   for (;;) {
-    const table = candidateTable(working);
     // A cell with no candidate and no digit: the grid contradicts itself, and
     // no amount of technique will fix that.
     for (let cell = 0; cell < SIZE; cell++) {
@@ -98,10 +208,27 @@ export function logicalSolve(grid, maxLevel) {
       continue;
     }
 
+    if (maxLevel < LEVELS.pairs) {
+      const solved = working.every((value) => value !== 0);
+      return { solved: solved && conflictsIn(working).size === 0, hardest };
+    }
+
+    // The three eliminations place nothing by themselves: they remove
+    // candidates, after which the singles above start again. That is why the
+    // loop continues rather than returning.
+    const removed =
+      eliminateNakedPairs(working, table) ||
+      eliminateHiddenPairs(working, table) ||
+      eliminateIntersections(working, table);
+    if (removed) {
+      hardest = Math.max(hardest, LEVELS.pairs);
+      continue;
+    }
+
     const solved = working.every((value) => value !== 0);
     // Completeness is not correctness: a technique that went wrong could fill
     // every cell with a grid that breaks the rules. Cheap to check, and it
-    // guards the eliminations a later task adds to this same loop.
+    // guards the eliminations above.
     return { solved: solved && conflictsIn(working).size === 0, hardest };
   }
 }
