@@ -5,6 +5,7 @@ import { mountLongestWord } from './mot-le-plus-long/screen.js';
 import { mountAnagrammes } from './anagrammes/screen.js';
 import { mountAllWords } from './tous-les-mots/screen.js';
 import { mountMotus } from './motus/screen.js';
+import { mountSudoku } from './sudoku/screen.js';
 
 export const GAMES = [
   {
@@ -33,5 +34,11 @@ export const GAMES = [
     subtitle: 'Un mot à deviner en six essais.',
     mount: mountMotus,
     needsFrequencies: true,
+  },
+  {
+    id: 'sudoku',
+    title: 'Sudoku',
+    subtitle: 'La grille classique, trois niveaux.',
+    mount: mountSudoku,
   },
 ];
