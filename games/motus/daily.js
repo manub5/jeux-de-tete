@@ -46,26 +46,30 @@ export function createDaily({ lexicon, storage, frequencies, day, mayRestart = t
       // forced in: the dictionary may have changed under the save.
       game.propose(attempt);
     }
-    if (game.attempts !== saved.rows.length) {
+    // `fidele` (faithful) is true only when every saved row replayed: the
+    // grid we rebuilt is the grid he actually played. It gates the giveUp()
+    // reconstruction below, and it must be computed before that bounded
+    // second pass can fall through unrestarted — see I1 in the task-7 report.
+    const fidele = game.attempts === saved.rows.length;
+    if (!fidele) {
       // Some saved attempt no longer replays — the dictionary changed under the
       // save, so the grid we could rebuild is not the grid he played. Closing
       // the game here would announce a loss he may not have had, and showing a
       // short grid would be a quiet lie. Start the day again: handing him back
       // a puzzle is honest, telling him he lost is not.
       storage.remove(SAVE_KEY);
-      // One restart, never two. `storage.remove` swallows a failing backend
+      // One restart, never two: `storage.remove` swallows a failing backend
       // rather than throwing, so a browser that refuses to forget would send us
-      // round this path for ever — and an application that will not open is the
-      // one failure he could not diagnose. A second pass plays on with whatever
-      // replayed instead.
+      // round this path for ever, and an application that will not open is the
+      // one failure he could not diagnose.
       if (mayRestart) {
         return createDaily({ lexicon, storage, frequencies, day, mayRestart: false });
       }
     }
-    // Every row replayed, so the save is faithful. A save marked finished whose
-    // rows did not end the game means he gave up — that is what giveUp()
-    // reconstructs, and it is the only thing it can mean here.
-    if (saved.finished && game.phase !== 'terminée') game.giveUp();
+    // Only a faithful replay can tell us he gave up: the rows are all there and
+    // simply do not end the game. An unfaithful one tells us nothing, and
+    // closing the game on it would announce a defeat he may never have had.
+    if (fidele && saved.finished && game.phase !== 'terminée') game.giveUp();
   } else {
     save();
   }
