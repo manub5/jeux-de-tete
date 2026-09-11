@@ -54,7 +54,7 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       if (result.ok) {
         feedback.className = 'retour succes';
         feedback.textContent = result.improved
-          ? `${result.word} — ${result.length} lettres, votre meilleur mot !`
+          ? `${result.word} — ${result.length} lettres, votre meilleur mot\u00a0!`
           : `${result.word} — ${result.length} lettres.`;
         feedback.replaceChildren(feedback.textContent, refuseButton(result.word));
       } else if (result.reason === 'lettres') {
@@ -63,11 +63,11 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       } else if (result.reason === 'refusé') {
         // He struck this word out himself; offer him the way back.
         feedback.className = 'retour erreur';
-        feedback.textContent = `« ${attempt} » est dans vos mots refusés.`;
+        feedback.textContent = `«\u00a0${attempt}\u00a0» est dans vos mots refusés.`;
         feedback.append(acceptButton(attempt));
       } else {
         feedback.className = 'retour erreur';
-        feedback.textContent = `« ${attempt} » n’est pas dans le dictionnaire.`;
+        feedback.textContent = `«\u00a0${attempt}\u00a0» n’est pas dans le dictionnaire.`;
         feedback.append(acceptButton(attempt));
       }
       field.value = '';
@@ -92,14 +92,14 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
         lexicon.reject(word);
         feedback.className = 'retour';
         feedback.textContent =
-          `« ${word} » est retiré de votre dictionnaire. Il reste compté pour cette partie.`;
+          `«\u00a0${word}\u00a0» est retiré de votre dictionnaire. Il reste compté pour cette partie.`;
       }, { className: 'bouton bouton--discret' });
     }
 
     const score = element('p', { class: 'score' });
     function refreshScore() {
       score.textContent = game.score
-        ? `Votre meilleur mot : ${game.score} lettres`
+        ? `Votre meilleur mot\u00a0: ${game.score} lettres`
         : 'Aucun mot trouvé pour l’instant.';
     }
     refreshScore();
@@ -140,11 +140,11 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       renderLetters(),
       element('p', {
         class: 'score',
-        text: `Votre score : ${result.score} lettres`,
+        text: `Votre score\u00a0: ${result.score} lettres`,
       }),
       element('p', {
         text: result.bestWord
-          ? `La meilleure solution était « ${result.bestWord} » (${result.bestLength} lettres).`
+          ? `La meilleure solution était «\u00a0${result.bestWord}\u00a0» (${result.bestLength} lettres).`
           : 'Aucun mot n’était trouvable dans ce tirage.',
       }),
       element('details', {}, [

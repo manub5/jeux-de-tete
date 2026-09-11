@@ -35,7 +35,7 @@ ECRANS = [
 
 HORS_LIGNE = [
     ("Le mot le plus long", ".jeton"),
-    ("Anagrammes", "text=Quel niveau ?"),
+    ("Anagrammes", "text=Quel niveau"),
     ("Trouver tous les mots", ".compteur"),
     ("Motus", "text=Le mot du jour"),
     ("Sudoku", "text=Facile"),
@@ -60,7 +60,7 @@ with sync_playwright() as pw:
     au_menu(page)
 
     page.click("text=Anagrammes")
-    page.wait_for_selector("text=Quel niveau ?")
+    page.wait_for_selector("text=Quel niveau")
     page.click(".niveaux button >> nth=0")
     page.wait_for_selector(".jeton")
     exige(

@@ -58,7 +58,7 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
         button('Reprendre', () => { start(enCours.difficulty); })
       );
     }
-    children.push(element('p', { class: 'sous-titre', text: 'Ou une nouvelle grille :' }));
+    children.push(element('p', { class: 'sous-titre', text: 'Ou une nouvelle grille\u00a0:' }));
     for (const niveau of Object.keys(DIFFICULTIES)) {
       children.push(
         button(LABELS[niveau], () => { clearSave(storage); start(niveau); },
