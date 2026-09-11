@@ -113,6 +113,20 @@ FINIR_ABANDONNER_RELANCER = """([cell, chiffre]) => {
   bouton('Facile').click();
 }"""
 
+#: What a screen reader is handed on the playing screen: the roles declared,
+#: and the labels the 81 cells carry. `status` is the project's only role, on
+#: live regions; anything composite promises a structure this markup has not.
+ACCESSIBILITE = """() => {
+  const cases = [...document.querySelectorAll('.case-sudoku')];
+  const etiquettes = cases.map(c => c.getAttribute('aria-label') || '');
+  return {
+    roles: [...new Set([...document.querySelectorAll('#app [role]')]
+      .map(e => e.getAttribute('role')))].sort(),
+    etiquettes: etiquettes.filter(e => /^ligne [1-9], colonne [1-9], /.test(e)).length,
+    exemple: etiquettes.find(e => /, (vide|[1-9])(, en conflit)?$/.test(e)) ?? null,
+  };
+}"""
+
 ETAT = """() => ({
   titre: document.querySelector('#app h1') ? document.querySelector('#app h1').textContent : null,
   scores: document.querySelectorAll('.score').length,
@@ -344,6 +358,26 @@ with sync_playwright() as pw:
         page.locator(".case-sudoku").nth(vides[2]).inner_text().strip()
         == str(solution[vides[2]]),
         "poser un chiffre efface les notes",
+    )
+
+    dit("== Ce que le lecteur d'écran entend ==")
+    # Mutant that must turn this red: put `role: 'grid'` back on the container
+    # in games/sudoku/screen.js. A composite role declared without the rows
+    # and cells it promises makes a reader announce a grid it cannot walk —
+    # and it silences the 81 buttons that do carry the information.
+    lecture = page.evaluate(ACCESSIBILITE)
+    dit(f"  {lecture}")
+    exige(
+        lecture["roles"] == ["status"],
+        f"aucun rôle composite n'est déclaré, seulement « status » ({lecture['roles']})",
+    )
+    exige(
+        lecture["etiquettes"] == 81,
+        f"les 81 cases portent chacune leur étiquette ({lecture['etiquettes']})",
+    )
+    exige(
+        lecture["exemple"] is not None,
+        f"une étiquette dit la ligne, la colonne et le contenu ({lecture['exemple']!r})",
     )
 
     dit("== La reprise ==")
