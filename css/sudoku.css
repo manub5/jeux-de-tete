@@ -22,7 +22,10 @@
 }
 
 /* The one place in the project where a touch target is under 48 px: a cell is
-   39 px at 360 px wide, and nine columns cannot do otherwise. It holds because
+   35 px at 360 px wide (39 px at 393), and nine columns cannot do otherwise.
+   Both figures re-measured on 2026-09-11 in the browser, on .case-sudoku
+   itself: 35.11 px and 38.77 px. The spec used to say 39 px at 360 — that is
+   the 393 value, one format out. It holds because
    touching a cell only selects it — nothing is destroyed, a slip picks the
    neighbour, and that is seen and undone with a second tap. Everything that
    acts keeps its 48 px. Justified in the spec, § 7. */
@@ -67,7 +70,7 @@
 
 /* Colour is never the only signal for a conflict: a small corner mark,
    inherited to the same contrast-checked colour as the digit above. Absolute
-   and sized well under the 39 px cell, so it never displaces the digit or
+   and sized well under the 35 px cell, so it never displaces the digit or
    changes the cell's size (spec, § 7). */
 .case-sudoku--conflit::after {
   content: '✕';
