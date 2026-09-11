@@ -9,7 +9,16 @@
   --bordure: #d8d4c8;
   --texte-faible: #6b6b6b; /* AA against --fond: 5.2:1 */
 
-  --corps: 18px;           /* accessibility floor, never smaller */
+  /* Accessibility floor, never smaller. Careful: this is declared on :root but
+     applied on `body` below, so the root element keeps the browser's default
+     size and `1rem` is 16 px, not 18. Every `rem` in the project is therefore
+     12.5 % smaller than it reads — `0.55rem` rendered 8.8 px, not 9.9. Left as
+     is on purpose: `:root { font-size: var(--corps) }` would rescale every rem
+     in four shipped games at once. Measured on Motus, whose eight-letter row
+     already fills 335 px of the 328 px available at 360 px wide, and would go
+     to 373. Anything that must hold a real size — a mark, a sign — is written
+     in px and measured in the browser. */
+  --corps: 18px;
   --cible: 48px;           /* minimum touch target */
   --rayon: 12px;
   --marge: 16px;
