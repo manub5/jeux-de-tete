@@ -14,6 +14,13 @@
 .grille-sudoku {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
+  /* Nine rows of exactly one ninth, and `minmax(0, 1fr)` rather than a bare
+     `1fr`: a bare `1fr` keeps an automatic minimum, so one cell taller than
+     its share drags its whole row up and squeezes the eight others. The grid
+     kept its 328 px and deformed inside — measured, nine pencil marks in one
+     cell took that row from 34.67 px to 93.63 px and left the rest at 27.3.
+     With a floor of zero the nine rows are equal whatever a cell holds. */
+  grid-template-rows: repeat(9, minmax(0, 1fr));
   gap: 1px;
   background: var(--bordure);
   border: 2px solid var(--texte);
@@ -32,6 +39,13 @@
    acts keeps its 48 px. Justified in the spec, § 7. */
 .case-sudoku {
   display: grid;
+  /* Three by three, the shape of the keypad: a pencil mark sits where its
+     digit sits, so adding one never moves the ones already there. The digit
+     itself spans the nine sub-cells (.chiffre-sudoku below). Same floor of
+     zero as the grid above — the cell's height is its row's, never its
+     content's. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
   place-items: center;
   position: relative;
   padding: 0;
@@ -102,9 +116,31 @@
   border-bottom: 2px solid var(--texte);
 }
 
-.chiffre-sudoku { font-size: 1.25rem; }
-.note-sudoku { font-size: 0.6rem; color: var(--texte-faible); }
-.case-sudoku:not(.case-sudoku--indice) > .note-sudoku:nth-child(n+2) { margin-left: 1px; }
+/* The digit covers the whole cell, so it stays centred on the cell and not on
+   the middle square of the three-by-three above. A cell never shows a digit
+   and pencil marks at once (game.js clears the marks when a digit lands), so
+   the two never have to share the space. */
+.chiffre-sudoku { grid-area: 1 / 1 / 4 / 4; font-size: 1.25rem; }
+
+/* Written in px, like the conflict mark and for the same reason: `1rem` is the
+   browser's 16 px here, not the project's 18 (see css/base.css), so a `rem`
+   figure would not say what it renders. A sub-cell is 11.55 px at 360 px wide
+   (34.67 / 3), which is what caps this: 11 px with `line-height: 1` fits, 12
+   would not. That is well under the project's 18 px floor, and it is written
+   down rather than hidden — nine marks in a 35 px cell cannot be any bigger.
+   It is an optional aid, never the grid itself: the digits a cell really holds
+   stay at 1.25rem. Colour still clears AA at that size — --texte-faible on
+   --fond-carte is 5.33:1 light and 6.05:1 dark. */
+.note-sudoku { font-size: 11px; line-height: 1; color: var(--texte-faible); }
+.note-sudoku[data-note='1'] { grid-area: 1 / 1; }
+.note-sudoku[data-note='2'] { grid-area: 1 / 2; }
+.note-sudoku[data-note='3'] { grid-area: 1 / 3; }
+.note-sudoku[data-note='4'] { grid-area: 2 / 1; }
+.note-sudoku[data-note='5'] { grid-area: 2 / 2; }
+.note-sudoku[data-note='6'] { grid-area: 2 / 3; }
+.note-sudoku[data-note='7'] { grid-area: 3 / 1; }
+.note-sudoku[data-note='8'] { grid-area: 3 / 2; }
+.note-sudoku[data-note='9'] { grid-area: 3 / 3; }
 
 /* A row of actions sharing the width. Same effect as `.actions` in
    css/mot-le-plus-long.css, under this game's own name: every sheet is linked

@@ -47,6 +47,38 @@ SOLUTION = """async () => {
 VIDES = """() => [...document.querySelectorAll('.case-sudoku')]
   .map((c, i) => c.textContent.trim() ? -1 : i).filter(i => i >= 0)"""
 
+#: The height of each of the nine rows, read off the first cell of each. The
+#: grid keeps its total height whatever happens inside it, so a deformation
+#: never shows up as a grid that grew — only as rows that stopped being equal.
+HAUTEURS_RANGEES = """() => {
+  const cases = [...document.querySelectorAll('.case-sudoku')];
+  return [...Array(9).keys()]
+    .map(r => Math.round(cases[r * 9].getBoundingClientRect().height * 100) / 100);
+}"""
+
+#: What the pencil marks of one cell actually look like on screen: the digits
+#: in order, how many distinct columns and rows they occupy, the glyph size,
+#: and whether any of them spills out of the cell.
+NOTES_POSEES = """(cell) => {
+  const c = document.querySelectorAll('.case-sudoku')[cell];
+  const notes = [...c.querySelectorAll('.note-sudoku')];
+  const boite = c.getBoundingClientRect();
+  const rects = notes.map(n => n.getBoundingClientRect());
+  return {
+    chiffres: notes.map(n => n.textContent),
+    colonnes: new Set(rects.map(r => Math.round(r.left))).size,
+    rangees: new Set(rects.map(r => Math.round(r.top))).size,
+    // Each mark's corner, relative to the cell: where a given digit is written
+    // must not depend on how many others are written beside it.
+    places: Object.fromEntries(notes.map((n, i) => [n.textContent,
+      [Math.round(rects[i].left - boite.left), Math.round(rects[i].top - boite.top)]])),
+    police: notes.length ? parseFloat(getComputedStyle(notes[0]).fontSize) : 0,
+    debordement: rects.filter(r =>
+      r.left < boite.left - 0.5 || r.right > boite.right + 0.5 ||
+      r.top < boite.top - 0.5 || r.bottom > boite.bottom + 0.5).length,
+  };
+}"""
+
 #: Fill cells from JavaScript. `refresh()` rebuilds the 81 cell buttons after
 #: every move, so they are looked up again each turn; the keypad is built once.
 #: Used only where a finished grid is a precondition rather than the subject —
@@ -247,15 +279,63 @@ with sync_playwright() as pw:
     )
     page.locator(".case-sudoku").nth(vides[2]).click()
     commande(page, "^Notes").click()
-    page.click(".touche-sudoku >> text='3'")
-    page.click(".touche-sudoku >> text='7'")
-    page.wait_for_timeout(80)
-    notes = page.locator(".case-sudoku").nth(vides[2]).inner_text().replace("\n", "")
-    dit(f"  notes posées : {notes!r}")
-    exige(set(notes) == {"3", "7"}, "les notes s'inscrivent en petit")
     exige(
         commande(page, "^Notes").inner_text().strip() == NOTES_OUI,
         "le bouton dit « oui »",
+    )
+    # Nine marks, one at a time, and the nine row heights after each: two marks
+    # was exactly one below the threshold, which is how a cell that grew by
+    # 59 px reached the browser without a single check going red.
+    reference = page.evaluate(HAUTEURS_RANGEES)
+    dit(f"  rangées, aucune note : {reference}")
+    deformees = []
+    places_du_1 = []
+    for chiffre in range(1, 10):
+        page.click(f".touche-sudoku >> text='{chiffre}'")
+        page.wait_for_timeout(60)
+        hauteurs = page.evaluate(HAUTEURS_RANGEES)
+        if hauteurs != reference:
+            deformees.append((chiffre, hauteurs))
+        places_du_1.append(tuple(page.evaluate(NOTES_POSEES, vides[2])["places"]["1"]))
+    for chiffre, hauteurs in deformees:
+        dit(f"  RANGÉES DÉFORMÉES à {chiffre} note(s) : {hauteurs}")
+    exige(
+        not deformees,
+        "poser une à neuf notes ne change la hauteur d'aucune rangée",
+    )
+    dit(f"  la place du « 1 », de une à neuf notes : {sorted(set(places_du_1))}")
+    exige(
+        len(set(places_du_1)) == 1,
+        "une note déjà posée ne bouge pas quand les suivantes s'ajoutent",
+    )
+    marques = page.evaluate(NOTES_POSEES, vides[2])
+    dit(f"  neuf notes : {marques}")
+    exige(marques["chiffres"] == list("123456789"), "les neuf notes s'affichent")
+    exige(
+        marques["colonnes"] == 3 and marques["rangees"] == 3,
+        "elles se rangent en trois colonnes et trois rangées dans la case",
+    )
+    exige(
+        marques["police"] >= 11,
+        f"chaque note garde un glyphe lisible ({marques['police']} px)",
+    )
+    exige(
+        marques["debordement"] == 0,
+        "aucune note ne déborde de sa case",
+    )
+    # Back to two marks, the state the rest of the scenario expects.
+    for chiffre in (1, 2, 4, 5, 6, 8, 9):
+        page.click(f".touche-sudoku >> text='{chiffre}'")
+    page.wait_for_timeout(80)
+    deux = page.evaluate(NOTES_POSEES, vides[2])
+    dit(f"  ramené à deux notes : {deux}")
+    exige(deux["chiffres"] == ["3", "7"], "une note retouchée s'efface")
+    # `.get` rather than `[...]`: when the check above has already failed, a
+    # missing key here would raise and the script would report one failure
+    # instead of every failure it could still find.
+    exige(
+        deux["places"] == {c: marques["places"].get(c) for c in ("3", "7")},
+        "chaque chiffre garde sa place, qu'il soit seul ou entouré",
     )
     commande(page, "^Notes").click()
     page.click(f".touche-sudoku >> text='{solution[vides[2]]}'")

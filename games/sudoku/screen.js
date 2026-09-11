@@ -104,7 +104,12 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
             onClick: () => { resetAbandon(); selected = cell; refresh(); },
           }, valeur
             ? [element('span', { class: 'chiffre-sudoku', text: String(valeur) })]
-            : notes.map((n) => element('span', { class: 'note-sudoku', text: String(n) })));
+            // `data-note` is what places the mark: css/sudoku.css gives each
+            // digit a fixed square of the three-by-three inside the cell, so a
+            // new mark never shifts the ones already written.
+            : notes.map((n) => element('span', {
+              class: 'note-sudoku', 'data-note': String(n), text: String(n),
+            })));
         })
       );
       compteur.textContent =
