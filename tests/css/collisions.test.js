@@ -292,8 +292,8 @@ test('aucun fichier partagé n’emprunte une classe à la feuille d’un jeu', 
 });
 
 test('le contrôle sait lire les fichiers partagés', () => {
-  // Sans ce test, le précédent passerait aussi bien si l'extraction ne trouvait
-  // aucune classe dans main.js, dans core/ ou dans le balisage.
+  // Without this one, the test above would pass just as well if the
+  // extraction found no class at all in main.js, in core/ or in the markup.
   assert.ok(!parFeuille.has('socle.css'),
     'le socle n’a pas de feuille à lui : sinon SOCLE désignerait autre chose');
   const partage = classesEmployees('main.js');
@@ -305,9 +305,9 @@ test('le contrôle sait lire les fichiers partagés', () => {
   assert.ok(balisage.has('chargement'), 'un attribut class= du balisage doit être vu');
   assert.ok(!balisage.has('module'),
     'un autre attribut ne doit pas passer pour une classe');
-  // Le mutant, fabriqué ici : un fichier partagé qui emploierait `.grille`,
-  // définie dans la seule feuille de Motus, la traînerait à travers les cinq
-  // jeux — et pas `.bouton`, qui est au socle.
+  // The mutant, built right here: a shared file using `.grille`, defined in
+  // Motus's sheet alone, would drag it across all five games — and not
+  // `.bouton`, which belongs to the socle.
   assert.deepEqual(classesEmpruntees(new Set(['grille', 'bouton']), SOCLE), ['grille']);
 });
 

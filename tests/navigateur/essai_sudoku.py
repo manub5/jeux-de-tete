@@ -650,7 +650,7 @@ with sync_playwright() as pw:
     ctx.set_offline(True)
     for jeu, marqueur in [
         ("Le mot le plus long", ".jeton"),
-        ("Anagrammes", "text=Quel niveau ?"),
+        ("Anagrammes", "text=Quel niveau"),
         ("Trouver tous les mots", ".compteur"),
         ("Motus", "text=Le mot du jour"),
         ("Sudoku", "text=Facile"),

@@ -115,7 +115,7 @@ function home(target) {
       element('p', {
         class: 'sous-titre',
         text:
-          'La liste des mots courants n’a pas pu être ouverte : certains ' +
+          'La liste des mots courants n’a pas pu être ouverte\u00a0: certains ' +
           'jeux sont indisponibles pour l’instant.',
       })
     );
