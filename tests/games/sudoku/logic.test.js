@@ -87,6 +87,81 @@ test('a grid with several answers is never reported as solved', () => {
   assert.equal(logicalSolve(ambigue, LEVELS.singles).solved, false);
 });
 
+test('a grid needing pairs is refused at the singles level and solved above it', () => {
+  // The plan's own "dure" grid (25 clues, described as insoluble by singles
+  // alone) turned out — verified by running it through this very solver, not
+  // by reading it — to be fully solved by singles: `logicalSolve(dure,
+  // LEVELS.singles)` returned `{ solved: true, hardest: 1 }`. Per the plan's
+  // own instruction ("verify by execution, never by reading; an earlier grid
+  // written from memory had no solution at all"), that fixture was replaced
+  // rather than the assertion weakened.
+  //
+  // This replacement was dug by this implementer, from a random full grid,
+  // down to the point where removing any further clue breaks uniqueness (24
+  // clues), then verified: `countSolutions` reports exactly one solution;
+  // singles alone leave it unsolved; the pairs level completes it. Mutation
+  // testing (see task-4-report.md) shows this specific grid needs the
+  // intersection technique — naked and hidden pairs are exercised by the two
+  // tests below instead.
+  const dure = grille(`
+    8....9... ....74... ...61.27.
+    4.3..8..7 .56...4.. .9....6..
+    ...9...5. 3.7.4.... ......3.6
+  `);
+  assert.equal(countSolutions(dure, 2), 1, 'la grille de remplacement doit avoir une solution unique');
+  const auxSingletons = logicalSolve(dure, LEVELS.singles);
+  const auxPaires = logicalSolve(dure, LEVELS.pairs);
+  // Si les singletons suffisaient, cette grille ne dirait rien du palier deux.
+  assert.equal(auxSingletons.solved, false, 'les singletons ne doivent pas suffire');
+  assert.equal(auxPaires.solved, true, 'les paires doivent conclure');
+  assert.equal(auxPaires.hardest, LEVELS.pairs);
+});
+
+test('an easy grid stays easy: asking for pairs does not raise its level', () => {
+  const resultat = logicalSolve(FACILE, LEVELS.pairs);
+  assert.equal(resultat.solved, true);
+  assert.equal(resultat.hardest, LEVELS.singles,
+    'une grille facile ne doit pas être étiquetée difficile');
+});
+
+test('a naked pair removes its two digits from the rest of the group', () => {
+  // 24 indices, solution unique, dug and verified the same way as the grid
+  // above. Mutation testing shows this one specifically needs the naked-pair
+  // elimination: turning it off (hidden pairs and intersections left on)
+  // makes it unsolvable at the pairs level, while turning off either of the
+  // other two changes nothing for this grid.
+  const grid = grille(`
+    ......528 ...3.6... 8....5.3.
+    1.2..4... ...95...4 .9...8...
+    .3....2.9 .4.1...83 .......6.
+  `);
+  assert.equal(countSolutions(grid, 2), 1, 'la grille doit avoir une solution unique');
+  const auxSingletons = logicalSolve(grid, LEVELS.singles);
+  const auxPaires = logicalSolve(grid, LEVELS.pairs);
+  assert.equal(auxSingletons.solved, false, 'les singletons ne doivent pas suffire');
+  assert.equal(auxPaires.solved, true, 'la paire nue doit conclure');
+  assert.equal(auxPaires.hardest, LEVELS.pairs);
+});
+
+test('a hidden pair reserves its two cells for its two digits', () => {
+  // 23 indices, solution unique, dug and verified the same way as the two
+  // grids above. Mutation testing shows this one specifically needs the
+  // hidden-pair elimination: turning it off (naked pairs and intersections
+  // left on) makes it unsolvable at the pairs level, while turning off either
+  // of the other two changes nothing for this grid.
+  const grid = grille(`
+    6..9..4.. 5.......7 9....5.36
+    .1...6.7. ....5.8.. .....2...
+    ....8.... 3.......9 85.7.1.2.
+  `);
+  assert.equal(countSolutions(grid, 2), 1, 'la grille doit avoir une solution unique');
+  const auxSingletons = logicalSolve(grid, LEVELS.singles);
+  const auxPaires = logicalSolve(grid, LEVELS.pairs);
+  assert.equal(auxSingletons.solved, false, 'les singletons ne doivent pas suffire');
+  assert.equal(auxPaires.solved, true, 'la paire cachée doit conclure');
+  assert.equal(auxPaires.hardest, LEVELS.pairs);
+});
+
 test('a grid the solver fills must obey the rules', () => {
   // Grille à solution unique, entièrement résoluble par singletons — vérifié
   // ci-dessous. La déclarer résolue n'a de sens que si le résultat est une
