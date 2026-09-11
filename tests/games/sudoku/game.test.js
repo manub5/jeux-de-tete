@@ -143,6 +143,40 @@ test('filling the grid correctly ends the game', () => {
   assert.equal(resultat.difficulty, 'facile');
 });
 
+test('a grid that is full but wrong is not a grid that is finished', () => {
+  // La moitié « et c'est la bonne réponse » de refreshPhase. Sans elle, un
+  // dernier chiffre FAUX annonce « Grille terminée », efface la sauvegarde et
+  // compte la partie : il a perdu sa grille en la finissant, et le mauvais
+  // chiffre est celui qu'il aurait corrigé en dix secondes.
+  const jeu = partie();
+  const vides = [...Array(81).keys()].filter((c) => !jeu.given(c));
+  const dernier = vides[vides.length - 1];
+  for (const cell of vides.slice(0, -1)) jeu.place(cell, jeu.solutionAt(cell));
+  assert.equal(jeu.phase, 'en cours', 'il reste une case : la partie court toujours');
+
+  const juste = jeu.solutionAt(dernier);
+  jeu.place(dernier, juste === 9 ? 1 : juste + 1);
+  assert.equal(jeu.valueAt(dernier) !== 0, true, 'la grille est bien pleine');
+  assert.equal(jeu.phase, 'en cours',
+    'une grille pleine mais fausse n’est pas terminée');
+
+  // Et la partie continue : il peut encore corriger la case.
+  jeu.place(dernier, juste);
+  assert.equal(jeu.phase, 'terminée', 'corrigée, elle se termine');
+});
+
+test('a game rebuilt from a full but wrong grid comes back in play', () => {
+  // Le même garde, à l'autre appel de refreshPhase : celui du constructeur,
+  // qui rattrape l'application tuée entre le dernier chiffre et l'écran de
+  // fin. Une grille pleine et fausse doit revenir jouable, pas terminée.
+  const { puzzle, solution } = generate(createRng(101), 'facile');
+  const vide = [...Array(81).keys()].find((c) => !puzzle[c]);
+  const values = Int8Array.from(solution);
+  values[vide] = solution[vide] === 9 ? 1 : solution[vide] + 1;
+  const jeu = createSudoku({ difficulty: 'facile', puzzle, solution, values });
+  assert.equal(jeu.phase, 'en cours');
+});
+
 test('a finished game refuses further moves', () => {
   const jeu = partie();
   for (let cell = 0; cell < 81; cell++) {
