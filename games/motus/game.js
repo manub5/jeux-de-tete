@@ -49,9 +49,14 @@ export function createMotus({ lexicon, rng, frequencies, length = DEFAULT_LENGTH
       if (tried.length !== target.length) {
         return { ok: false, reason: 'longueur', marks: null };
       }
-      const verdict = lexicon.validate(tried);
-      if (!verdict.ok) {
-        return { ok: false, reason: verdict.reason === 'refusé' ? 'refusé' : 'inconnu', marks: null };
+      // The answer itself is never put to the dictionary. He may have struck
+      // this very word from his own list, and a day that cannot be won or lost
+      // is the worst thing this game could do to him.
+      if (tried !== target) {
+        const verdict = lexicon.validate(tried);
+        if (!verdict.ok) {
+          return { ok: false, reason: verdict.reason === 'refusé' ? 'refusé' : 'inconnu', marks: null };
+        }
       }
       const marks = mark(tried, target);
       rows.push({ word: tried, marks });
