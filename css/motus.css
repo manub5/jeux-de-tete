@@ -1,4 +1,23 @@
 /* css/motus.css */
+
+/* Text colours for the two marked cells, following the light/dark idiom in
+   base.css (root default, overridden under prefers-color-scheme: dark).
+   `--case-placed-fond` tracks `--erreur`, which is itself a much lighter red
+   in dark mode, so its text needs to flip to dark there too; `--case-present-
+   fond` (#b8860b) is a fixed brand colour that does not change with the
+   theme, so its text does not need to either — one dark value clears AA in
+   both themes. See the ratios recorded beside each declaration below. */
+:root {
+  --case-placed-texte: #ffffff;  /* on --erreur light #a32020: 7.54:1 */
+  --case-present-texte: #1b1b1b; /* on #b8860b, both themes: 5.29:1 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --case-placed-texte: #1b1b1b; /* on --erreur dark #ff8080: 7.10:1 */
+  }
+}
+
 .grille {
   display: grid;
   gap: 4px;
@@ -24,8 +43,8 @@
   line-height: 1;
 }
 
-.case--placed { background: var(--erreur); color: #ffffff; border-color: var(--erreur); }
-.case--present { background: #b8860b; color: #ffffff; border-color: #b8860b; }
+.case--placed { background: var(--erreur); color: var(--case-placed-texte); border-color: var(--erreur); }
+.case--present { background: #b8860b; color: var(--case-present-texte); border-color: #b8860b; }
 .case--absent { color: var(--texte-faible); }
 .case--vide { border-style: dashed; }
 
