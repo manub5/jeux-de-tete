@@ -1,0 +1,67 @@
+/* css/sudoku.css */
+.grille {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 1px;
+  background: var(--bordure);
+  border: 2px solid var(--texte);
+  aspect-ratio: 1;
+  max-width: 100%;
+  margin: var(--marge) 0;
+}
+
+/* The one place in the project where a touch target is under 48 px: a cell is
+   39 px at 360 px wide, and nine columns cannot do otherwise. It holds because
+   touching a cell only selects it — nothing is destroyed, a slip picks the
+   neighbour, and that is seen and undone with a second tap. Everything that
+   acts keeps its 48 px. Justified in the spec, § 7. */
+.case {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  background: var(--fond-carte);
+  color: var(--accent);
+  font: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.case--indice { color: var(--texte); font-weight: 700; }
+.case--choisie { outline: 3px solid var(--accent); outline-offset: -3px; }
+.case--conflit { background: var(--erreur); color: var(--accent-texte); }
+
+/* Every third column and row carries the block boundary. */
+.case:nth-child(3n) { border-right: 2px solid var(--texte); }
+.case:nth-child(9n) { border-right: 0; }
+.grille > .case:nth-child(n+19):nth-child(-n+27),
+.grille > .case:nth-child(n+46):nth-child(-n+54) {
+  border-bottom: 2px solid var(--texte);
+}
+
+.chiffre { font-size: 1.25rem; }
+.note { font-size: 0.6rem; color: var(--texte-faible); }
+.case:not(.case--indice) > .note:nth-child(n+2) { margin-left: 1px; }
+
+.clavier {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: var(--marge);
+}
+
+.touche {
+  min-height: var(--cible);
+  min-width: var(--cible);
+  border: 2px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+  color: var(--texte);
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.touche--large { grid-column: span 5; font-size: 1.1rem; }
