@@ -1,0 +1,70 @@
+// games/motus/daily.js
+// The day's game: drawn from the date, saved after every attempt, played once.
+//
+// "Once a day" only means anything if the game survives the app closing. He
+// puts the phone down at the third attempt and comes back in the evening to the
+// same grid — not to a lost day.
+
+import { createMotus } from './game.js';
+import { DAILY_LENGTH, dailyWord } from './pick.js';
+
+export const SAVE_KEY = 'motus.jour';
+
+/**
+ * Only the attempts are stored, never the marks or the word: replaying the
+ * attempts through the same rules rebuilds everything, and a save that cannot
+ * disagree with the rules cannot show him a wrong grid.
+ */
+function asSaved(raw, day) {
+  if (typeof raw !== 'object' || raw === null) return null;
+  if (raw.day !== day) return null;
+  const rows = Array.isArray(raw.rows) ? raw.rows.filter((w) => typeof w === 'string') : [];
+  return { rows, finished: raw.finished === true };
+}
+
+export function createDaily({ lexicon, storage, frequencies, day }) {
+  const word = dailyWord(frequencies, day);
+  const game = createMotus({ lexicon, frequencies, length: DAILY_LENGTH, word });
+  const saved = asSaved(storage.get(SAVE_KEY, null), day);
+
+  function save() {
+    storage.set(SAVE_KEY, {
+      day,
+      rows: game.rows.map((row) => row.word),
+      finished: game.phase === 'terminée',
+    });
+  }
+
+  if (saved) {
+    for (const attempt of saved.rows) {
+      if (game.phase === 'terminée') break;
+      // A saved attempt that the rules refuse today is dropped rather than
+      // forced in: the dictionary may have changed under the save.
+      game.propose(attempt);
+    }
+    if (saved.finished && game.phase !== 'terminée') game.giveUp();
+  } else {
+    save();
+  }
+
+  const propose = game.propose;
+  const giveUp = game.giveUp;
+  // Every change to the grid is written down straight away: he may close the
+  // application between two attempts and there is no other moment to save.
+  game.propose = (input) => {
+    const answer = propose(input);
+    if (answer.ok) save();
+    return answer;
+  };
+  game.giveUp = () => {
+    const answer = giveUp();
+    save();
+    return answer;
+  };
+
+  return {
+    game,
+    alreadyPlayed: game.phase === 'terminée',
+    result: game.result,
+  };
+}
