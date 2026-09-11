@@ -38,3 +38,50 @@
   margin: var(--marge) 0;
   white-space: pre;
 }
+
+/* The row just played lands cell by cell: same idiom as the falling tiles in
+   base.css — a named keyframe, `--rang` staggering each cell, `backwards` so
+   nothing flashes before its turn. Only the cells of that one row carry this
+   class (see refresh() in screen.js), so older rows and the still-empty ones
+   never replay it. */
+.case--arrive {
+  animation: tombe 260ms ease-out backwards;
+  animation-delay: calc(var(--rang, 0) * 80ms);
+}
+
+/* A refusal shakes the field: says "no" before he has read the message, and
+   does not rest on colour. */
+@keyframes secousse {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(calc(var(--marge) * -1)); }
+  40% { transform: translateX(var(--marge)); }
+  60% { transform: translateX(calc(var(--marge) * -0.6)); }
+  80% { transform: translateX(calc(var(--marge) * 0.6)); }
+}
+
+.saisie--secoue {
+  animation: secousse 300ms ease-in-out;
+}
+
+/* The winning row bounces once, briefly, once its cells have all landed:
+   `--longueur` (the word's length, set inline) delays the bounce past the
+   last cell's own stagger and fall. */
+@keyframes rebond {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(calc(var(--marge) * -0.5)); }
+  70% { transform: translateY(calc(var(--marge) * 0.15)); }
+}
+
+.ligne--victoire {
+  animation: rebond 320ms ease-out;
+  animation-delay: calc((var(--longueur, 5) - 1) * 80ms + 260ms);
+}
+
+/* The system can signal that animations are unwanted. We listen. */
+@media (prefers-reduced-motion: reduce) {
+  .case--arrive,
+  .saisie--secoue,
+  .ligne--victoire {
+    animation: none;
+  }
+}
