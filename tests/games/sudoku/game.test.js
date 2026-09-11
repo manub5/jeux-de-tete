@@ -152,6 +152,27 @@ test('a finished game refuses further moves', () => {
   assert.throws(() => jeu.place(0, 1), /terminée/);
 });
 
+test('a game rebuilt from a completed grid comes back finished', () => {
+  const { puzzle, solution } = generate(createRng(101), 'facile');
+  const jeu = createSudoku({
+    difficulty: 'facile', puzzle, solution,
+    values: Int8Array.from(solution),
+    notes: Array.from({ length: 81 }, () => []),
+  });
+  assert.equal(jeu.phase, 'terminée');
+});
+
+test('a note under a digit does not survive a reload', () => {
+  const { puzzle, solution } = generate(createRng(101), 'facile');
+  const vide = [...Array(81).keys()].find((c) => !puzzle[c]);
+  const values = Int8Array.from(puzzle);
+  values[vide] = solution[vide];
+  const notes = Array.from({ length: 81 }, () => []);
+  notes[vide] = [3, 7];  // une sauvegarde incohérente : des notes sous un chiffre
+  const jeu = createSudoku({ difficulty: 'facile', puzzle, solution, values, notes });
+  assert.deepEqual(jeu.notesAt(vide), []);
+});
+
 test('nothing handed out can reach back into the game', () => {
   const jeu = partie();
   const vide = premiereVide(jeu);

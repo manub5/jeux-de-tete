@@ -111,5 +111,18 @@ export function createSudoku({ difficulty, puzzle, solution, values, notes }) {
     },
   };
 
+  // During play these cannot coexist — placing a digit clears the notes, and a
+  // note is refused on a filled cell. The constructor accepts both arrays from
+  // a save, though, so it normalises rather than trusting: a stale snapshot
+  // must not leave notes hiding under a digit.
+  for (let cell = 0; cell < SIZE; cell++) {
+    if (board[cell]) pencil[cell].clear();
+  }
+  // The phase is computed here too, not only after a move: the save is written
+  // by the move itself, so an application killed between the last digit and the
+  // end screen leaves a complete grid in storage. Without this, it would come
+  // back in play with no empty cell to fill — a finished grid he cannot finish.
+  refreshPhase();
+
   return game;
 }
