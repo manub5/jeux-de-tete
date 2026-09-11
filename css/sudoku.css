@@ -99,6 +99,10 @@
 
 .actions-sudoku > .bouton { flex: 1; }
 
+/* Un écart entre la rangée qui agit sur la grille et celle qui la quitte : de
+   quoi ne pas toucher « Abandonner » en visant « Notes ». */
+.actions-sudoku + .actions-sudoku { margin-top: var(--marge); }
+
 .clavier-sudoku {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

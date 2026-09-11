@@ -175,16 +175,26 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       render();
     }, { className: 'bouton bouton--discret' });
 
+    // No resetAbandon() here, and none is needed: leaving the screen unmounts
+    // it, and coming back rebuilds this whole closure — a fresh abandonConfirm
+    // at false and a fresh button carrying its first label. See the comment on
+    // resetAbandon() above.
+    const plusTard = button('Reprendre plus tard', onQuit,
+      { className: 'bouton bouton--discret' });
+
     refresh();
 
+    // Two rows of side-by-side buttons rather than five stacked ones. Four
+    // full-width buttons pushed "Abandonner cette grille" below the fold of a
+    // 360 × 780 screen, and the player this is built for has no way of knowing
+    // that a button she cannot see exists. Measured: 821 px of content before,
+    // 745 px after, on the same screen.
     return element('div', {}, [
       compteur,
       grille,
       clavier,
-      element('div', { class: 'actions-sudoku' }, [annuler, refaire]),
-      notes,
-      button('Reprendre plus tard', onQuit, { className: 'bouton bouton--discret' }),
-      abandonner,
+      element('div', { class: 'actions-sudoku' }, [annuler, refaire, notes]),
+      element('div', { class: 'actions-sudoku' }, [plusTard, abandonner]),
     ]);
   }
 
