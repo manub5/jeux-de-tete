@@ -2,9 +2,9 @@
 
 **À lancer avant chaque livraison.** C'est cette suite, et elle seule, qui a
 trouvé ce que les revues de code ont laissé passer à chaque lot : les six
-défauts du lot 1, les deux du lot 2 après dix-huit revues, et au lot 4 deux
-boutons du sudoku invisibles sans faire défiler. Un jeu qui passe `npm test`
-peut être injouable à l'écran ; ces scripts ouvrent un vrai navigateur, à taille
+défauts du lot 1, les deux du lot 2 après dix-huit revues, et au lot 4 le
+bouton d'abandon du sudoku entièrement sous le bas de l'écran. Un jeu qui passe
+`npm test` peut être injouable à l'écran ; ces scripts ouvrent un vrai navigateur, à taille
 de téléphone, et jouent.
 
 ## Lancer la suite
