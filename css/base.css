@@ -141,5 +141,10 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 
 .retour { min-height: 3rem; }
 .score { font-weight: 700; }
+/* La ligne d'objectif : deux jeux l'emploient (le mot le plus long et Motus),
+   comme .score et .retour au-dessus. Elle vivait dans la feuille du premier,
+   d'où le second l'empruntait en silence — même défaut que `.actions` chez le
+   sudoku. Déclaration inchangée, donc rendu inchangé pour les deux. */
+.objectif { font-weight: 600; }
 
 .sous-titre { color: var(--texte-faible); margin: 0 0 var(--marge); }
