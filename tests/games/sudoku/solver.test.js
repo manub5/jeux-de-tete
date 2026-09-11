@@ -31,13 +31,16 @@ test('a solved grid has exactly one solution: itself', () => {
 });
 
 test('a grid with two answers is reported as two, not as one', () => {
-  // La même grille privée d'un indice : deux chiffres deviennent échangeables.
+  // La même grille privée de quatre indices : deux chiffres deviennent
+  // échangeables. Mesuré : exactement deux solutions, même en comptant jusqu'à
+  // neuf — l'assertion dit donc deux, et non « au moins une », qui serait vraie
+  // même d'une grille sans ambiguïté.
   const ambigue = Int8Array.from(UNIQUE);
   ambigue[0] = 0;
   ambigue[1] = 0;
   ambigue[9] = 0;
   ambigue[10] = 0;
-  assert.ok(countSolutions(ambigue, 2) >= 1);
+  assert.equal(countSolutions(ambigue, 2), 2);
 });
 
 test('a contradictory grid has no solution at all', () => {
