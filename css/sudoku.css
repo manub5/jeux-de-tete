@@ -58,7 +58,27 @@
 }
 
 .case-sudoku--indice { color: var(--texte); font-weight: 700; }
-.case-sudoku--choisie { outline: 3px solid var(--accent); outline-offset: -3px; }
+/* La case choisie : un anneau de 4 px en deux temps, l'accent à l'extérieur et
+   un liseré de la couleur du papier à l'intérieur, contre le fond de la case.
+   Un seul ton n'y suffisait pas : le contour d'accent seul tombait à 1,23:1 en
+   clair et 1,06:1 en sombre sur une case en conflit, et `poser()` laisse
+   justement la sélection sur la case fautive — donc toute erreur effaçait le
+   repère du prochain appui. Aucune couleur unique ne peut y arriver en sombre :
+   il faudrait être à la fois plus clair que #1f2226 et plus sombre que #ff8080
+   de 3:1, ce qui est arithmétiquement impossible. C'est donc le liseré intérieur
+   qui borde le fond, et c'est lui qu'on mesure, WCAG 1.4.11, 3:1 exigé.
+   Ratios calculés avec la formule de luminance relative WCAG :
+   clair  — accent #1f6f4a sur fond de case #ffffff : 6,12:1
+   clair  — liseré #ffffff sur fond de conflit #a32020 : 7,54:1
+   sombre — accent #4fbf8b sur fond de case #1f2226 : 6,96:1
+   sombre — liseré #1f2226 sur fond de conflit #ff8080 : 6,58:1
+   Les deux anneaux se distinguent aussi l'un de l'autre (6,12:1 et 6,96:1), donc
+   l'anneau reste lisible comme un tout. */
+.case-sudoku--choisie {
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    inset 0 0 0 4px var(--fond-carte);
+}
 .case-sudoku--conflit { background: var(--erreur); color: var(--case-sudoku-conflit-texte); }
 
 /* Colour is never the only signal for a conflict: a small corner mark,
@@ -68,8 +88,11 @@
 .case-sudoku--conflit::after {
   content: '✕';
   position: absolute;
-  top: 1px;
-  right: 2px;
+  /* En retrait de l'épaisseur de l'anneau de sélection : posé à 1 px et 2 px du
+     coin, le marqueur mordait cet anneau et le coupait justement sur la case
+     fautive, où il est le plus utile. */
+  top: 4px;
+  right: 4px;
   font-size: 0.55rem;
   line-height: 1;
   color: currentColor;
