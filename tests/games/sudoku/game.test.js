@@ -173,6 +173,17 @@ test('a note under a digit does not survive a reload', () => {
   assert.deepEqual(jeu.notesAt(vide), []);
 });
 
+test('a rebuilt game is seeded with the mistakes it is handed', () => {
+  const { puzzle, solution } = generate(createRng(101), 'facile');
+  const jeu = createSudoku({
+    difficulty: 'facile', puzzle, solution,
+    values: Int8Array.from(puzzle),
+    notes: Array.from({ length: 81 }, () => []),
+    mistakes: [3, 40],
+  });
+  assert.equal(jeu.mistakes, 2);
+});
+
 test('nothing handed out can reach back into the game', () => {
   const jeu = partie();
   const vide = premiereVide(jeu);

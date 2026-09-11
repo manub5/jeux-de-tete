@@ -78,6 +78,21 @@ test('a save whose puzzle has no single answer is refused', () => {
     'une grille neuve doit avoir été distribuée');
 });
 
+test('a mistake survives a reload', () => {
+  // Le spec est explicite : il pose le téléphone en cours de grille et revient
+  // trois jours plus tard. Le compte d'erreurs doit tenir sur deux séances.
+  const storage = createStorage(backendWith());
+  const premier = loadOrStart({ storage, rng: createRng(9), difficulty: 'facile' });
+  const vide = premiereVide(premier);
+  const juste = premier.solutionAt(vide);
+  premier.place(vide, juste === 9 ? 1 : juste + 1);
+  assert.equal(premier.mistakes, 1);
+  assert.deepEqual(storage.get(SAVE_KEY, null).mistakes, [vide]);
+
+  const reprise = loadOrStart({ storage, rng: createRng(999), difficulty: 'facile' });
+  assert.equal(reprise.mistakes, 1, 'le compte d’erreurs doit survivre à la reprise');
+});
+
 test('clearing the save leaves nothing behind', () => {
   const storage = createStorage(backendWith());
   loadOrStart({ storage, rng: createRng(8), difficulty: 'facile' });

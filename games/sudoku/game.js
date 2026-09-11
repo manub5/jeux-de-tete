@@ -2,11 +2,11 @@
 
 import { SIZE, conflictsIn, isComplete } from './grid.js';
 
-export function createSudoku({ difficulty, puzzle, solution, values, notes }) {
+export function createSudoku({ difficulty, puzzle, solution, values, notes, mistakes }) {
   const clues = Int8Array.from(puzzle);
   const board = values ? Int8Array.from(values) : Int8Array.from(puzzle);
   const pencil = notes ? notes.map((set) => new Set(set)) : Array.from({ length: SIZE }, () => new Set());
-  const wrongCells = new Set();
+  const wrongCells = new Set(mistakes ?? []);
   const past = [];
   const future = [];
   let phase = 'en cours';
@@ -107,6 +107,7 @@ export function createSudoku({ difficulty, puzzle, solution, values, notes }) {
         puzzle: [...clues],
         values: [...board],
         notes: pencil.map((set) => [...set].sort((a, b) => a - b)),
+        mistakes: [...wrongCells],
       };
     },
   };
