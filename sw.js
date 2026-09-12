@@ -4,7 +4,7 @@
 // CACHE_VERSION MUST be bumped on every deployment. Forgetting it is the
 // classic failure of this kind of app: the old files are served forever and
 // nobody understands why nothing changes.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_PREFIX = 'jeux-de-tete-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 

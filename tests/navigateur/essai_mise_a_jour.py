@@ -15,7 +15,7 @@ import commun
 from playwright.sync_api import sync_playwright
 
 #: The version the service worker is expected to settle on.
-ACTUELLE = "jeux-de-tete-v5"
+ACTUELLE = "jeux-de-tete-v6"
 
 #: A cache left by an earlier release, filled with a page that is NOT the app,
 #: so that serving it instead of the new one is impossible to miss.

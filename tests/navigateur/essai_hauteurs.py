@@ -52,6 +52,10 @@ ECRANS = [
         "sudoku — niveaux, grille en cours",
         ["Sudoku", "Facile", "Reprendre plus tard", "Sudoku"],
     ),
+    ("paires — niveaux", ["Les paires"]),
+    ("paires — difficile", ["Les paires", "Difficile — 30 paires"]),
+    ("séquence — accueil", ["La séquence"]),
+    ("séquence — partie", ["La séquence", "Commencer"]),
 ]
 
 with sync_playwright() as pw:
