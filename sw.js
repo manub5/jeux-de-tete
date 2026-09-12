@@ -43,6 +43,7 @@ const ASSETS = [
   'games/paires/save.js',
   'games/paires/screen.js',
   'games/paires/symboles.js',
+  'games/sequence/zones.js',
   'games/sudoku/game.js',
   'games/sudoku/generate.js',
   'games/sudoku/grid.js',
