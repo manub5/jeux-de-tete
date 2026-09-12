@@ -92,3 +92,23 @@ test('sur cent zones tirees, les quatre sortent toutes', () => {
   assert.equal(new Set(jeu.sequence).size, 4,
     'un tirage qui oublie une zone rendrait le jeu bancal');
 });
+
+test('un nouveau tour repart de zero apres un tour gagne', () => {
+  const jeu = partie();
+  jeu.allonger();
+  assert.equal(jeu.press(jeu.sequence[0]), 'fini');
+  jeu.allonger();
+  assert.equal(jeu.position, 0,
+    'sans remise a zero, le nouveau tour sauterait ses premieres zones');
+  assert.equal(jeu.sequence.length, 2);
+  assert.equal(jeu.press(jeu.sequence[0]), 'juste');
+  assert.equal(jeu.press(jeu.sequence[1]), 'fini');
+});
+
+test('press(undefined) sur une partie neuve est une faute, pas un appui valide', () => {
+  const jeu = partie();
+  assert.equal(jeu.press(undefined), 'faux',
+    'sans la garde sur les bornes, undefined === sequence[position] hors limites');
+  assert.equal(jeu.phase, 'perdu');
+  assert.equal(jeu.position, 0);
+});
