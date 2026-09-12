@@ -39,6 +39,7 @@ const ASSETS = [
   'games/motus/screen.js',
   'games/motus/share.js',
   'games/paires/game.js',
+  'games/paires/save.js',
   'games/paires/symboles.js',
   'games/sudoku/game.js',
   'games/sudoku/generate.js',
