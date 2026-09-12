@@ -62,13 +62,12 @@ export const SYMBOLES = [
   // une ondulation.
   { id: 'damier', libelle: 'damier', corps: '<rect x="10" y="10" width="80" height="80" fill="none" stroke="currentColor" stroke-width="8"/>' + TF('M50 10 V90 M10 50 H90', 8) + '<rect x="14" y="14" width="32" height="32" fill="currentColor"/><rect x="54" y="54" width="32" height="32" fill="currentColor"/>' },
   { id: 'enveloppe', libelle: 'enveloppe', corps: '<rect x="8" y="24" width="84" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="11"/>' + TF('M14 30 L50 58 L86 30', 11) },
-  // Named a spiral, not a maze: this single coiling line has no branch or
-  // junction, so it cannot read as a maze (corridors, walls, a choice of
-  // path). At 33px the box only holds one turn and a half at a legible
-  // stroke width (the same box-size arithmetic as the sudoku notes at
-  // 11px — an accepted limit, not a defect), so it reads as a spiral
-  // that has barely started, not as a branching maze.
-  { id: 'spirale', libelle: 'spirale', corps: TF('M86 14 H22 V86 H78 V44 H48 V66', 12) },
+  // Named a hook, not a maze or a spiral: this single right-angled line has
+  // no branch (not a maze) and, checked at real render size, still reads
+  // more like a stray letter than a coil (not a spiral either) — but a
+  // bent line that doubles back on itself is exactly what a hook is, so
+  // the name carries no promise the shape can fail to keep.
+  { id: 'crochet', libelle: 'crochet', corps: TF('M86 14 H22 V86 H78 V44 H48 V66', 12) },
   { id: 'echelle', libelle: 'échelle', corps: TF('M26 8 V92 M74 8 V92 M26 30 H74 M26 70 H74', 12) },
   { id: 'vague', libelle: 'vague', corps: T('M10 66 C24 22 40 22 50 50 C60 78 76 78 90 34') },
 ];
