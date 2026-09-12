@@ -67,10 +67,12 @@ test('resume() réveille un contexte suspendu — la règle d\'Android', async (
   assert.equal(contexte.state, 'running');
 });
 
-test('jouer sans avoir réveillé le contexte ne lève pas', () => {
+test('jouer sans avoir réveillé le contexte ne lève pas, et ne joue rien', () => {
   const contexte = fauxContexte({ etat: 'suspended' });
   const son = createSound({ audioContext: contexte });
-  son.play('rond');   // silencieux, mais pas une exception
+  son.play('rond');   // silencieux, pas une exception
+  assert.equal(contexte.joues.length, 0,
+    'un contexte encore suspendu ne doit rien jouer — c’est la règle d’Android');
 });
 
 test('une zone inconnue ne joue rien et ne lève pas', async () => {
