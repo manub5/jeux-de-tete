@@ -150,8 +150,6 @@ test('une phase qui n\'est ni « en cours » ni « terminée » est refusée', (
 });
 
 test('une carte dont un champ a le mauvais type est refusée', () => {
-  const storage = faussStorage();
-  saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
   const gabarits = [
     (c) => ({ ...c, symbole: 42 }),
     (c) => ({ ...c, symbole: '' }),
@@ -159,9 +157,33 @@ test('une carte dont un champ a le mauvais type est refusée', () => {
     (c) => ({ ...c, appariee: 1 }),
   ];
   for (const abimer of gabarits) {
+    // Une sauvegarde neuve à chaque essai : abîmer un seul champ à la fois,
+    // jamais en cumulant les dégâts du gabarit précédent sur la même carte.
+    const storage = faussStorage();
+    saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
     const abime = storage.get('paires.partie');
     abime.cards[0] = abimer(abime.cards[0]);
     storage.set('paires.partie', abime);
-    assert.equal(loadGame(storage), null);
+    assert.equal(loadGame(storage), null, JSON.stringify(abime.cards[0]));
+  }
+});
+
+test('un symbole non-string ou vide reste refusé même quand les paires s’équilibrent', () => {
+  // Le test précédent abîme une seule carte : la garde sur le compte des
+  // paires (chaque symbole exactement deux fois) suffit alors à elle seule
+  // à refuser la sauvegarde, sans jamais passer par la garde sur le type de
+  // `symbole`. Ici, les deux jumelles sont abîmées de façon identique : le
+  // compte des paires reste équilibré, seule la garde sur le type peut
+  // encore refuser la sauvegarde.
+  for (const remplacement of [42, '']) {
+    const storage = faussStorage();
+    saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
+    const abime = storage.get('paires.partie');
+    const original = abime.cards[0].symbole;
+    for (const carte of abime.cards) {
+      if (carte.symbole === original) carte.symbole = remplacement;
+    }
+    storage.set('paires.partie', abime);
+    assert.equal(loadGame(storage), null, JSON.stringify(remplacement));
   }
 });
