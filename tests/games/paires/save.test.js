@@ -125,3 +125,43 @@ test('clearSave efface, et la reprise rend null ensuite', () => {
   clearSave(storage);
   assert.equal(loadGame(storage), null);
 });
+
+test('une carte absente ou non-objet dans le tableau est refusée', () => {
+  const storage = faussStorage();
+  saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
+  for (const carteInvalide of [null, 'carte', 42]) {
+    const abime = storage.get('paires.partie');
+    abime.cards[0] = carteInvalide;
+    storage.set('paires.partie', abime);
+    assert.equal(loadGame(storage), null, JSON.stringify(carteInvalide));
+    assert.equal(resumableSave(storage), null, JSON.stringify(carteInvalide));
+  }
+});
+
+test('une phase qui n\'est ni « en cours » ni « terminée » est refusée', () => {
+  const storage = faussStorage();
+  saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
+  for (const phaseInvalide of ['bug', '', null, undefined]) {
+    const abime = storage.get('paires.partie');
+    abime.phase = phaseInvalide;
+    storage.set('paires.partie', abime);
+    assert.equal(loadGame(storage), null, String(phaseInvalide));
+  }
+});
+
+test('une carte dont un champ a le mauvais type est refusée', () => {
+  const storage = faussStorage();
+  saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
+  const gabarits = [
+    (c) => ({ ...c, symbole: 42 }),
+    (c) => ({ ...c, symbole: '' }),
+    (c) => ({ ...c, montree: 'oui' }),
+    (c) => ({ ...c, appariee: 1 }),
+  ];
+  for (const abimer of gabarits) {
+    const abime = storage.get('paires.partie');
+    abime.cards[0] = abimer(abime.cards[0]);
+    storage.set('paires.partie', abime);
+    assert.equal(loadGame(storage), null);
+  }
+});
