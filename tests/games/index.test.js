@@ -21,9 +21,9 @@ test('no game is called accueil, which is the menu itself', () => {
   assert.ok(!GAMES.some((g) => g.id === 'accueil'));
 });
 
-test('the five games are registered', () => {
+test('the six games are registered', () => {
   assert.deepEqual(GAMES.map((g) => g.id).sort(),
-    ['anagrammes', 'mot-le-plus-long', 'motus', 'sudoku', 'tous-les-mots']);
+    ['anagrammes', 'mot-le-plus-long', 'motus', 'paires', 'sudoku', 'tous-les-mots']);
 });
 
 test('the sudoku needs no frequency file, being made of digits', () => {

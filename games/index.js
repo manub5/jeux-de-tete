@@ -6,6 +6,7 @@ import { mountAnagrammes } from './anagrammes/screen.js';
 import { mountAllWords } from './tous-les-mots/screen.js';
 import { mountMotus } from './motus/screen.js';
 import { mountSudoku } from './sudoku/screen.js';
+import { mountPairs } from './paires/screen.js';
 
 export const GAMES = [
   {
@@ -40,5 +41,11 @@ export const GAMES = [
     title: 'Sudoku',
     subtitle: 'La grille classique, trois niveaux.',
     mount: mountSudoku,
+  },
+  {
+    id: 'paires',
+    title: 'Les paires',
+    subtitle: 'Retrouver les paires, en retournant le moins de cartes possible.',
+    mount: mountPairs,
   },
 ];
