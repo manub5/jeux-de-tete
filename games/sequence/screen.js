@@ -27,6 +27,13 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   /** The current board's painters, replaced on every render, null at the menu. */
   let peindreCourant = null;
   let allumerCourant = null;
+  // game.phase turns 'repete' the instant allonger() is called, before the
+  // sequence has shown a single zone — the rules layer has no notion of "the
+  // screen is still animating". Relying on game.phase alone to gate presses
+  // would let a tap in the first instants of a round through as a real
+  // answer. This screen-local flag is the actual "is the board currently
+  // playing back the sequence" state; it is what press handling checks.
+  let montreEnCours = false;
 
   function annulerFlux() {
     if (timer === null) return;
@@ -53,6 +60,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   function render() {
     peindreCourant = null;
     allumerCourant = null;
+    montreEnCours = false;
     container.replaceChildren(game ? renderGame() : renderMenu());
   }
 
@@ -113,7 +121,9 @@ export function mountSequence(container, { stats, storage, onQuit }) {
       compteur.textContent = game.phase === 'montre' && longueur === 0
         ? 'Regardez bien…'
         : `Suite de ${longueur} — record du tour : ${game.longueur}`;
-      for (const b of boutons.values()) b.disabled = game.phase !== 'repete';
+      for (const b of boutons.values()) {
+        b.disabled = montreEnCours || game.phase !== 'repete';
+      }
     }
 
     function allumer(zoneId, duree) {
@@ -129,7 +139,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
     }
 
     function repondre(zoneId) {
-      if (game !== pourJeu || game.phase !== 'repete') return;
+      if (game !== pourJeu || montreEnCours || game.phase !== 'repete') return;
       allumer(zoneId, 240);
       const verdict = game.press(zoneId);
       peindre();
@@ -157,11 +167,16 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   function tourSuivant(pourJeu) {
     if (game !== pourJeu) return;
     game.allonger();
+    montreEnCours = true;
     const pas = VITESSES[vitesse];
     let i = 0;
     const montrer = () => {
       if (game !== pourJeu) return;
-      if (i >= game.sequence.length) { peindreCourant?.(); return; }
+      if (i >= game.sequence.length) {
+        montreEnCours = false;
+        peindreCourant?.();
+        return;
+      }
       allumerCourant?.(game.sequence[i], pas);
       i += 1;
       plus_tard(pas, montrer);
