@@ -83,6 +83,19 @@ export function createPairsGame({ rng, niveau }) {
     };
   }
 
+  /**
+   * Puts a saved board back. Only save.js calls this, and only with a state it
+   * has already validated field by field: the rules stay the single place that
+   * knows what a board is, and the save stays the single place that decides
+   * whether a stored one is trustworthy.
+   */
+  function restore(saved) {
+    cards.length = 0;
+    for (const carte of saved.cards) cards.push({ ...carte });
+    flips = saved.flips;
+    phase = saved.phase;
+  }
+
   return {
     get cards() { return cards; },
     get flips() { return flips; },
@@ -92,6 +105,7 @@ export function createPairsGame({ rng, niveau }) {
     get colonnes() { return reglage.colonnes; },
     flip,
     resolve,
+    restore,
     snapshot,
   };
 }
