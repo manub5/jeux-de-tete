@@ -27,5 +27,7 @@ test('chaque tracé est du SVG, et rien d’autre', () => {
       `${symbole.id} contient autre chose qu’un tracé`);
     assert.doesNotMatch(symbole.corps, /fill="(?!currentColor|none)/,
       `${symbole.id} fixe une couleur au lieu d’hériter de currentColor`);
+    assert.doesNotMatch(symbole.corps, /stroke="(?!currentColor|none)/,
+      `${symbole.id} fixe une couleur au lieu d’hériter de currentColor`);
   }
 });
