@@ -7,6 +7,7 @@ import { mountAllWords } from './tous-les-mots/screen.js';
 import { mountMotus } from './motus/screen.js';
 import { mountSudoku } from './sudoku/screen.js';
 import { mountPairs } from './paires/screen.js';
+import { mountSequence } from './sequence/screen.js';
 
 export const GAMES = [
   {
@@ -47,5 +48,11 @@ export const GAMES = [
     title: 'Les paires',
     subtitle: 'Retrouver les paires, en retournant le moins de cartes possible.',
     mount: mountPairs,
+  },
+  {
+    id: 'sequence',
+    title: 'La séquence',
+    subtitle: 'Une suite de couleurs et de sons à répéter.',
+    mount: mountSequence,
   },
 ];

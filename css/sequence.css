@@ -1,0 +1,39 @@
+/* css/sequence.css — four zones, each with its colour, its shape and its sound.
+   Nothing here relies on colour alone. */
+
+.zones-sequence {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--marge);
+  margin: var(--marge) 0;
+}
+
+.zone-sequence {
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--rayon);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  border: 3px solid transparent;
+  opacity: 0.75;
+}
+
+/* Lit: full opacity and a ring. Not brightness alone — a lit zone must be
+   obvious to someone who cannot tell these four hues apart. */
+.zone-sequence--allumee {
+  opacity: 1;
+  border-color: var(--texte);
+  transform: scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone-sequence--allumee { transform: none; }
+}
+
+.zone-sequence svg { width: 46%; height: 46%; display: block; }
+
+.actions-sequence { display: flex; gap: var(--marge); }
+.actions-sequence .bouton { flex: 1; }
