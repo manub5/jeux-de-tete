@@ -1,0 +1,45 @@
+/* css/paires.css — the board never scrolls: he must see every position to
+   remember it (spec § 8.1). Measured at 360x780: the hardest level leaves 42px
+   below the buttons, so one more row of interface would break that rule. */
+
+.plateau-paires {
+  display: grid;
+  grid-template-columns: repeat(var(--colonnes-paires), 1fr);
+  gap: 6px;
+  margin: var(--marge) 0;
+}
+
+/* A card is a <button>, and .bouton sets min-height: 48px — which would break
+   the square. Measured: 49.7px at 360px wide, above the 48px touch floor. */
+.carte-paires {
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-texte);
+  border: 2px solid transparent;
+}
+
+.carte-paires--montree {
+  background: var(--fond-carte);
+  color: var(--texte);
+  border-color: var(--bordure);
+}
+
+/* A found pair is not marked by colour alone: it also loses its border and
+   dims, and its label says "trouvée" to a screen reader. */
+.carte-paires--appariee {
+  background: var(--fond-carte);
+  color: var(--texte-faible);
+  border-color: transparent;
+  opacity: 0.55;
+}
+
+.carte-paires svg { width: 72%; height: 72%; display: block; }
+
+.actions-paires { display: flex; gap: var(--marge); }
+.actions-paires .bouton { flex: 1; }
