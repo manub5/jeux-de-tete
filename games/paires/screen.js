@@ -137,7 +137,7 @@ export function mountPairs(container, { stats, storage, onQuit }) {
     const annuler = button('Abandonner cette partie', () => {
       if (!abandonConfirm) {
         abandonConfirm = true;
-        annuler.textContent = 'Confirmer l'abandon';
+        annuler.textContent = 'Confirmer l’abandon';
         return;
       }
       annulerMinuteries();
@@ -188,7 +188,7 @@ export function mountPairs(container, { stats, storage, onQuit }) {
       element('p', {
         class: 'score',
         text: flips === minimum
-          ? `En ${flips} retournements : le minimum possible. Sans une seule erreur.`
+          ? `En ${flips} retournements : le minimum possible. Sans une seule erreur.`
           : `En ${flips} retournements, pour un minimum de ${minimum}.`,
       }),
       button('Nouvelle partie', () => start(pourJeu.niveau)),
