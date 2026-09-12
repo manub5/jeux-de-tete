@@ -57,15 +57,18 @@ export const SYMBOLES = [
   { id: 'de', libelle: 'dé à jouer', corps: '<rect x="12" y="12" width="76" height="76" rx="12" fill="none" stroke="currentColor" stroke-width="10"/><g fill="currentColor"><circle cx="32" cy="32" r="7"/><circle cx="50" cy="50" r="7"/><circle cx="68" cy="68" r="7"/></g>' },
   // Les cinq de mon cru, regardés à 33 px (étape 5). Ils remplacent la spirale
   // ronde, la maison, l'engrenage, la feuille et la clé. Chacun occupe la boîte
-  // autrement que les vingt-cinq précédents : deux blocs séparés en diagonale,
+  // autrement que les vingt-cinq précédents : une grille 2×2 à cases alternées,
   // un rectangle couché, un tracé à angles droits, une échelle de barreaux,
   // une ondulation.
-  { id: 'damier', libelle: 'damier', corps: '<rect x="6" y="6" width="42" height="42" fill="currentColor"/><rect x="52" y="52" width="42" height="42" fill="currentColor"/>' },
+  { id: 'damier', libelle: 'damier', corps: '<rect x="10" y="10" width="80" height="80" fill="none" stroke="currentColor" stroke-width="8"/>' + TF('M50 10 V90 M10 50 H90', 8) + '<rect x="14" y="14" width="32" height="32" fill="currentColor"/><rect x="54" y="54" width="32" height="32" fill="currentColor"/>' },
   { id: 'enveloppe', libelle: 'enveloppe', corps: '<rect x="8" y="24" width="84" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="11"/>' + TF('M14 30 L50 58 L86 30', 11) },
-  // Called a maze, not a spiral: at 33px the box holds one turn and a half at a
-  // legible stroke width, and a coil that short reads as a right-angled maze —
-  // so the spoken name matches what the eye sees.
-  { id: 'labyrinthe', libelle: 'labyrinthe', corps: TF('M86 14 H22 V86 H78 V44 H48 V66', 12) },
+  // Named a spiral, not a maze: this single coiling line has no branch or
+  // junction, so it cannot read as a maze (corridors, walls, a choice of
+  // path). At 33px the box only holds one turn and a half at a legible
+  // stroke width (the same box-size arithmetic as the sudoku notes at
+  // 11px — an accepted limit, not a defect), so it reads as a spiral
+  // that has barely started, not as a branching maze.
+  { id: 'spirale', libelle: 'spirale', corps: TF('M86 14 H22 V86 H78 V44 H48 V66', 12) },
   { id: 'echelle', libelle: 'échelle', corps: TF('M26 8 V92 M74 8 V92 M26 30 H74 M26 70 H74', 12) },
   { id: 'vague', libelle: 'vague', corps: T('M10 66 C24 22 40 22 50 50 C60 78 76 78 90 34') },
 ];
