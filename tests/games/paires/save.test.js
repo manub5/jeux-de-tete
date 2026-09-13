@@ -157,8 +157,8 @@ test('une carte dont un champ a le mauvais type est refusée', () => {
     (c) => ({ ...c, appariee: 1 }),
   ];
   for (const abimer of gabarits) {
-    // Une sauvegarde neuve à chaque essai : abîmer un seul champ à la fois,
-    // jamais en cumulant les dégâts du gabarit précédent sur la même carte.
+    // A fresh save on every try: damage one field at a time, never
+    // compounding the previous template's damage onto the same card.
     const storage = faussStorage();
     saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
     const abime = storage.get('paires.partie');
@@ -169,12 +169,11 @@ test('une carte dont un champ a le mauvais type est refusée', () => {
 });
 
 test('un symbole non-string ou vide reste refusé même quand les paires s’équilibrent', () => {
-  // Le test précédent abîme une seule carte : la garde sur le compte des
-  // paires (chaque symbole exactement deux fois) suffit alors à elle seule
-  // à refuser la sauvegarde, sans jamais passer par la garde sur le type de
-  // `symbole`. Ici, les deux jumelles sont abîmées de façon identique : le
-  // compte des paires reste équilibré, seule la garde sur le type peut
-  // encore refuser la sauvegarde.
+  // The previous test damages a single card: the guard on the pair count
+  // (each symbol exactly twice) alone is then enough to refuse the save,
+  // without ever going through the guard on `symbole`'s type. Here, both
+  // twins are damaged identically: the pair count stays balanced, so only
+  // the type guard can still refuse the save.
   for (const remplacement of [42, '']) {
     const storage = faussStorage();
     saveGame(storage, createPairsGame({ rng: createRng(3), niveau: 'facile' }));
@@ -186,4 +185,66 @@ test('un symbole non-string ou vide reste refusé même quand les paires s’éq
     storage.set('paires.partie', abime);
     assert.equal(loadGame(storage), null, JSON.stringify(remplacement));
   }
+});
+
+test('un symbole qui n’existe plus dans SYMBOLES est refusé, même quand les paires s’équilibrent', () => {
+  // This very lot renamed a symbol twice (labyrinthe -> spirale -> crochet):
+  // a save written before such a rename, read back after it, would carry an
+  // id nothing can draw any more.
+  const storage = faussStorage();
+  const jeu = createPairsGame({ rng: createRng(3), niveau: 'facile' });
+  saveGame(storage, jeu);
+  const abime = storage.get('paires.partie');
+  const original = abime.cards[0].symbole;
+  for (const carte of abime.cards) {
+    if (carte.symbole === original) carte.symbole = 'labyrinthe';
+  }
+  storage.set('paires.partie', abime);
+  assert.equal(loadGame(storage), null);
+});
+
+test('une paire appariée mais non montrée est refusée, même quand les autres gardes s’y retrouvent', () => {
+  // Both twins are damaged identically: both the pair count and the matched-
+  // pair count stay balanced (2 each), so only the appariee-implies-montree
+  // guard can still refuse the save.
+  const storage = faussStorage();
+  const jeu = createPairsGame({ rng: createRng(3), niveau: 'facile' });
+  saveGame(storage, jeu);
+  const abime = storage.get('paires.partie');
+  const original = abime.cards[0].symbole;
+  for (const carte of abime.cards) {
+    if (carte.symbole === original) { carte.appariee = true; carte.montree = false; }
+  }
+  storage.set('paires.partie', abime);
+  assert.equal(loadGame(storage), null);
+});
+
+test('toutes les cartes appariées mais phase « en cours » est refusé', () => {
+  const storage = faussStorage();
+  const jeu = createPairsGame({ rng: createRng(3), niveau: 'facile' });
+  while (jeu.phase === 'en cours') {
+    const premier = jeu.cards.findIndex((c) => !c.appariee);
+    const jumeau = jeu.cards.findIndex(
+      (c, i) => i !== premier && !c.appariee && c.symbole === jeu.cards[premier].symbole);
+    jeu.flip(premier);
+    jeu.flip(jumeau);
+  }
+  saveGame(storage, jeu);
+  const abime = storage.get('paires.partie');
+  abime.phase = 'en cours';
+  storage.set('paires.partie', abime);
+  assert.equal(loadGame(storage), null,
+    'une partie où tout est déjà apparié ne peut pas être « en cours »');
+});
+
+test('phase « terminée » avec une carte non appariée est refusée', () => {
+  const storage = faussStorage();
+  const jeu = createPairsGame({ rng: createRng(3), niveau: 'facile' });
+  jeu.flip(0);
+  saveGame(storage, jeu);
+  const abime = storage.get('paires.partie');
+  abime.phase = 'terminée';
+  storage.set('paires.partie', abime);
+  assert.equal(loadGame(storage), null,
+    'une partie « terminée » où une carte reste non appariée est un mensonge');
 });
