@@ -1,0 +1,39 @@
+/* css/statistiques.css — one line per game, three big numbers, no chart
+   (spec § 9: "gros et lisibles, sans graphique"). */
+
+.lignes-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--marge);
+  margin: var(--marge) 0;
+}
+
+.ligne-stats {
+  padding: var(--marge);
+  border: 2px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+}
+
+.ligne-stats h2 { font-size: 1.1rem; margin: 0 0 8px; }
+
+.chiffres-stats {
+  display: flex;
+  gap: var(--marge);
+  flex-wrap: wrap;
+}
+
+.chiffre-stat { text-align: center; }
+.chiffre-stat strong {
+  display: block;
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+.chiffre-stat span {
+  display: block;
+  color: var(--texte-faible);
+  font-size: 0.85rem;
+}
+
+.actions-stats { display: flex; gap: var(--marge); margin-top: var(--marge); }
+.actions-stats .bouton { flex: 1; }

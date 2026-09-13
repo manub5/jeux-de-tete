@@ -20,6 +20,7 @@ const ecrans = readdirSync(racineGames, { withFileTypes: true })
   .filter((entree) => entree.isDirectory())
   .map((entree) => path.join(racineGames, entree.name, 'screen.js'))
   .filter((chemin) => existsSync(chemin));
+ecrans.push(fileURLToPath(new URL('../../core/stats-screen.js', import.meta.url)));
 
 test('chaque écran de jeu s’importe sans lever d’erreur', async () => {
   assert.ok(ecrans.length >= 5, 'la découverte des écrans a dû se tromper de dossier');
