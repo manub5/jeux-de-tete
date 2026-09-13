@@ -10,6 +10,7 @@ const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const ASSETS = [
   './',
+  'core/backup.js',
   'core/rng.js',
   'core/router.js',
   'core/stats.js',
