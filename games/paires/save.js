@@ -8,9 +8,11 @@
 // lot 4 exactly that shape left a grid unwinnable with no message at all.
 
 import { NIVEAUX, createPairsGame } from './game.js';
+import { SYMBOLES } from './symboles.js';
 import { createRng } from '../../core/rng.js';
 
 const CLE = 'paires.partie';
+const ID_SYMBOLES = new Set(SYMBOLES.map((s) => s.id));
 
 export function saveGame(storage, game) {
   storage.set(CLE, game.snapshot());
@@ -32,7 +34,12 @@ function asSaved(brut) {
   const comptes = new Map();
   for (const carte of brut.cards) {
     if (!carte || typeof carte !== 'object') return null;
-    if (typeof carte.symbole !== 'string' || !carte.symbole) return null;
+    // Not just "is a string": the id must be one this build actually draws
+    // from. This file's own list of symbols has been renamed twice within
+    // this very lot (labyrinthe -> spirale -> crochet) — a save written
+    // before such a rename, read back after it, would otherwise carry a
+    // symbol nothing can render.
+    if (typeof carte.symbole !== 'string' || !ID_SYMBOLES.has(carte.symbole)) return null;
     if (typeof carte.montree !== 'boolean' || typeof carte.appariee !== 'boolean') return null;
     if (carte.appariee && !carte.montree) return null;
     comptes.set(carte.symbole, (comptes.get(carte.symbole) ?? 0) + 1);
@@ -47,6 +54,14 @@ function asSaved(brut) {
     apparies.set(carte.symbole, (apparies.get(carte.symbole) ?? 0) + 1);
   }
   for (const combien of apparies.values()) if (combien !== 2) return null;
+
+  // phase and the board must agree: createPairsGame only ever sets 'terminée'
+  // the instant every card becomes appariee, and never before or after. A
+  // saved 'terminée' with an unmatched card, or 'en cours' with none left to
+  // match, is the same "grid nobody can finish" shape this file exists to
+  // refuse — just carried by phase instead of by a lone unpaired symbol.
+  const toutesAppariees = brut.cards.every((c) => c.appariee);
+  if (toutesAppariees !== (brut.phase === 'terminée')) return null;
 
   return brut;
 }
