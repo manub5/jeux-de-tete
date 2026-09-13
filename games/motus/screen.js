@@ -25,6 +25,9 @@ const MESSAGES = {
 export function mountMotus(container, { lexicon, stats, storage, frequencies, onQuit }) {
   let game = null;
   let daily = false;
+  // The daily.js wrapper behind the current daily game, so finish() can mark
+  // its result scored — null whenever a free-play game is on screen.
+  let jourActuel = null;
   // The id of the pending "show the end screen" timer, if any — see
   // scheduleFinish() and finish() below. Kept at this scope because both
   // "Nouvelle partie" and the router's cleanup need to reach it.
@@ -75,15 +78,16 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     const children = [];
 
     if (jour.alreadyPlayed) {
-      // finish() (plus bas) est le chemin normal d'enregistrement, mais il
-      // peut ne jamais tourner si l'application est fermée entre le dernier
-      // essai gagnant et l'affichage de l'écran de fin — daily.js reconstruit
-      // fidèlement la grille dans ce cas, mais stats.record() n'a jamais été
-      // appelé. stats.read(...).lastPlayed est la trace que finish() a bien
-      // tourné aujourd'hui : s'il ne dit pas aujourd'hui, on rattrape ici,
-      // sans jamais compter le même jour deux fois.
-      if (stats.read('motus').lastPlayed !== todayKey()) {
+      // finish() (below) is the normal recording path, but it may never run
+      // if the app is closed between the winning attempt and the end screen
+      // — daily.js still faithfully rebuilds the grid in that case, only
+      // stats.record() was skipped. jour.scored is daily.js's own flag for
+      // exactly this, kept apart from stats.read('motus').lastPlayed: that
+      // timestamp is shared with free-play games, so a free round played the
+      // same day would otherwise mask a daily score that was never recorded.
+      if (!jour.scored) {
         stats.record('motus', jour.result.score, { lowerIsBetter: true });
+        jour.markScored();
       }
       children.push(
         element('p', {
@@ -103,6 +107,7 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
         button('Le mot du jour', () => {
           daily = true;
           game = jour.game;
+          jourActuel = jour;
           render();
         })
       );
@@ -113,6 +118,7 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
       children.push(
         button(`${length} lettres`, () => {
           daily = false;
+          jourActuel = null;
           game = createMotus({
             lexicon,
             frequencies,
@@ -268,6 +274,9 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     if (game.phase !== 'terminée') game.giveUp();
     const resultat = game.result;
     stats.record('motus', resultat.score, { lowerIsBetter: true });
+    // Free-play games have no jourActuel: only the daily game's own save
+    // tracks whether its result reached stats, so only it gets marked.
+    if (daily && jourActuel) jourActuel.markScored();
 
     const enfants = [
       element('h1', { text: resultat.won ? 'Trouvé\u00a0!' : 'Partie terminée' }),
