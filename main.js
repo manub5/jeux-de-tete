@@ -4,6 +4,7 @@
 import { createRouter } from './core/router.js';
 import { createStorage } from './core/storage.js';
 import { createStats } from './core/stats.js';
+import { mountStatistiques } from './core/stats-screen.js';
 import { element, button } from './core/ui.js';
 import { loadIndex, loadFrequencies } from './lexicon/loader.js';
 import { createLexicon } from './lexicon/lexicon.js';
@@ -110,6 +111,10 @@ function home(target) {
       })
     );
   }
+  target.append(
+    button('Statistiques', () => router.go('statistiques'),
+      { className: 'bouton bouton--discret' })
+  );
   if (!frequenciesAvailable) {
     target.append(
       element('p', {
@@ -165,6 +170,9 @@ async function start() {
     visibleGames = GAMES.filter((game) => !game.needsFrequencies || frequenciesAvailable);
 
     const routes = { accueil: home };
+    routes.statistiques = (target) => mountStatistiques(target, {
+      stats, storage, games: visibleGames, onQuit: () => router.go('accueil'),
+    });
     for (const game of visibleGames) {
       routes[game.id] = (target) => game.mount(target, tools);
     }

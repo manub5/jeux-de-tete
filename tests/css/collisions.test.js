@@ -169,13 +169,24 @@ function classesEmployeesHtml(chemin) {
  * A class defined **nowhere** is not a borrowing: `.lettre`, put on by Motus,
  * only names a landmark in the markup and depends on no sheet at all.
  */
+
+/**
+ * The stylesheet counted as `jeu`'s own. A real game's is `${jeu}.css`, as
+ * always. SOCLE's is `css/statistiques.css` — the shared files have a sheet
+ * of their own now too, home of core/stats-screen.js's classes, even though
+ * there is still no `css/socle.css` (see the self-test below).
+ */
+function feuillePropre(jeu) {
+  return jeu === SOCLE ? 'statistiques.css' : `${jeu}.css`;
+}
+
 function classesEmpruntees(employees, jeu) {
   const propres = new Set([
-    ...(parFeuille.get(`${jeu}.css`) ?? []),
+    ...(parFeuille.get(feuillePropre(jeu)) ?? []),
     ...parFeuille.get('base.css'),
   ]);
   const ailleurs = new Set(
-    feuillesDeJeu.filter(([f]) => f !== `${jeu}.css`).flatMap(([, classes]) => [...classes])
+    feuillesDeJeu.filter(([f]) => f !== feuillePropre(jeu)).flatMap(([, classes]) => [...classes])
   );
   return [...employees].filter((c) => !propres.has(c) && ailleurs.has(c)).sort();
 }
@@ -203,9 +214,10 @@ const FICHIERS_PARTAGES = [
 ];
 
 /**
- * The name classesEmpruntees() is given for a shared file. There is no
- * `css/socle.css` — the self-test below checks that — so "its own sheet" is
- * empty and only base.css counts as its own. Exactly the rule wanted here.
+ * The name classesEmpruntees() is given for a shared file. There is still no
+ * `css/socle.css` — the self-test below checks that — but feuillePropre()
+ * above maps SOCLE to `css/statistiques.css` instead, the one sheet the
+ * shared files (core/stats-screen.js, specifically) do own.
  */
 const SOCLE = 'socle';
 
