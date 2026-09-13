@@ -22,6 +22,8 @@ function fauxContexte({ etat = 'suspended' } = {}) {
                connect() {} };
     },
     destination: {},
+    fermetures: 0,
+    close() { contexte.fermetures += 1; },
     joues,
   };
   return contexte;
@@ -89,4 +91,16 @@ test('un contexte qui refuse de démarrer laisse le jeu jouable', async () => {
   const son = createSound({ audioContext: contexte });
   await son.resume();          // ne doit pas rejeter
   son.play('rond');            // ne doit pas lever
+});
+
+test('close() libère le contexte audio', () => {
+  const contexte = fauxContexte();
+  const son = createSound({ audioContext: contexte });
+  son.close();
+  assert.equal(contexte.fermetures, 1);
+});
+
+test('close() sans contexte ne lève pas', () => {
+  const son = createSound({ audioContext: null });
+  son.close();   // silencieux, pas une exception
 });

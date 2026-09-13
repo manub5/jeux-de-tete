@@ -57,9 +57,26 @@ export function createSound({ audioContext } = {}) {
     oscillateur.stop(maintenant + duree);
   }
 
+  /**
+   * Releases the audio device. mountSequence creates one of these per visit
+   * to the screen and never reused it across mounts — without this, the
+   * final review measured about fifty AudioContexts surviving in one
+   * session before Chromium started refusing new ones and the game went
+   * silently mute. The cleanup a screen returns must call this.
+   */
+  function close() {
+    if (!contexte) return;
+    try {
+      contexte.close();
+    } catch {
+      // Already closed, or closing isn't supported: nothing left to release.
+    }
+  }
+
   return {
     resume,
     play,
+    close,
     setMuted(valeur) { muted = Boolean(valeur); },
     get muted() { return muted; },
     get disponible() { return Boolean(contexte); },
