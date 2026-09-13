@@ -220,7 +220,7 @@ with sync_playwright() as pw:
     titre = page.locator("h1").inner_text()
     score = page.locator(".score").inner_text()
     dit(f"  {titre!r} / {score!r}")
-    exige(titre == "Toutes les paires sont trouvées !", "l'écran de fin est affiché")
+    exige(titre == "Toutes les paires sont trouvées !", "l'écran de fin est affiché")
     exige(
         "30 retournements" in score,
         f"le score compte 30 retournements (lu : {score!r})",

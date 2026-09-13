@@ -88,7 +88,6 @@ export function mountStatistiques(container, { stats, storage, games, onQuit }) 
         streak > 1
           ? element('p', { text: `${streak} jours d’affilée.` })
           : element('p', { class: 'sous-titre', text: 'Reviens demain pour commencer une série.' }),
-        element('div', { class: 'lignes-stats' }, games.map(ligneJeu)),
         message,
         fichierInput,
         element('div', { class: 'actions-stats' }, [
@@ -98,6 +97,12 @@ export function mountStatistiques(container, { stats, storage, games, onQuit }) 
             { className: 'bouton bouton--discret' }),
         ]),
         button('Retour', onQuit, { className: 'bouton bouton--discret' }),
+        // Last: one card per game, seven of them — the same reason
+        // games/tous-les-mots/screen.js puts its own variable-length list
+        // (the words found) after its buttons, never before. A list this
+        // long is free to run past the bottom of the screen and scroll; a
+        // command is not (essai_hauteurs.py) — so the commands come first.
+        element('div', { class: 'lignes-stats' }, games.map(ligneJeu)),
       ])
     );
   }
