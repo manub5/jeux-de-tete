@@ -75,6 +75,16 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     const children = [];
 
     if (jour.alreadyPlayed) {
+      // finish() (plus bas) est le chemin normal d'enregistrement, mais il
+      // peut ne jamais tourner si l'application est fermée entre le dernier
+      // essai gagnant et l'affichage de l'écran de fin — daily.js reconstruit
+      // fidèlement la grille dans ce cas, mais stats.record() n'a jamais été
+      // appelé. stats.read(...).lastPlayed est la trace que finish() a bien
+      // tourné aujourd'hui : s'il ne dit pas aujourd'hui, on rattrape ici,
+      // sans jamais compter le même jour deux fois.
+      if (stats.read('motus').lastPlayed !== todayKey()) {
+        stats.record('motus', jour.result.score, { lowerIsBetter: true });
+      }
       children.push(
         element('p', {
           text: jour.result.won
