@@ -23,7 +23,16 @@ function asSaved(raw, day) {
   // and let a fresh day overwrite it.
   if (!Array.isArray(raw.rows)) return null;
   const rows = raw.rows.filter((w) => typeof w === 'string');
-  return { rows, finished: raw.finished === true, scored: raw.scored === true };
+  // A save with no `scored` field at all predates this field: it can only
+  // have been written by a build where finish() was the sole recording
+  // path, unconditionally, so a finished save from back then already
+  // reached stats. Reading that as "not yet scored" would double-count it
+  // the moment he next opens Motus after the update — a permanent, silent
+  // error in his own record. `'scored' in raw` (not `=== true`) is what
+  // tells an old save (absent) apart from a genuine one this build wrote
+  // (always present, possibly false — see save() below).
+  const scored = 'scored' in raw ? raw.scored === true : raw.finished === true;
+  return { rows, finished: raw.finished === true, scored };
 }
 
 export function createDaily({ lexicon, storage, frequencies, day, mayRestart = true }) {
