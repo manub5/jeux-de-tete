@@ -13,8 +13,8 @@ de téléphone, et jouent.
 tests/navigateur/lancer.sh
 ```
 
-Le script démarre lui-même un serveur statique sur un port libre, passe les
-quatre essais, arrête le serveur, et sort non nul si l'un d'eux a échoué.
+Le script démarre lui-même un serveur statique sur un port libre, passe tous
+les essais, arrête le serveur, et sort non nul si l'un d'eux a échoué.
 
 Pour lancer un seul essai contre un serveur déjà en place :
 
@@ -38,6 +38,8 @@ JEUX_URL=http://127.0.0.1:9000/ python3 tests/navigateur/essai_motus.py
 | `essai_hauteurs.py` | Aucune **commande** sous le pli, sur les quinze écrans des cinq jeux, aux deux formats du cahier des charges (360 × 780 et 393 × 851). Le critère n'est pas « tout tient » : une liste de résultats peut défiler, un bouton non. |
 | `essai_motus.py` | Motus joué en entier : le mot du jour, les refus qui ne coûtent pas d'essai, l'animation, les symboles en plus des couleurs, la reprise, la victoire, les carrés à partager, et le record qui **descend** quand il fait mieux. |
 | `essai_ensemble.py` | Les jeux des lots 1 et 2, et ce que les cinq écrans partagent : cibles tactiles de 48 px, aucun débordement en largeur à 360 px, corps de texte à 18 px, ouverture hors ligne des cinq jeux. |
+| `essai_paires.py` | Les paires jouées en entier : les trois niveaux, le plateau du niveau difficile (60 cartes, six colonnes) sans défilement, deux cartes différentes qui se recouvrent au retournement suivant, deux cartes identiques qui restent appariées, le compteur, la reprise après rechargement à l'identique, l'abandon qui exige une confirmation, et une partie menée jusqu'à l'écran de fin avec ses statistiques. |
+| `essai_sequence.py` | La séquence jouée en entier : les trois vitesses et la coupure du son proposées et qui survivent à un rechargement, les zones inactives pendant l'affichage puis actives, la suite lue dans le DOM et répétée pour l'allonger, une zone fausse qui termine la partie sur la longueur atteinte, et — le plus important — quitter l'écran pendant l'affichage de la suite qui ne laisse rien tourner derrière. |
 
 ### Les scénarios « correctif » de `essai_sudoku.py`
 
