@@ -34,6 +34,16 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   // answer. This screen-local flag is the actual "is the board currently
   // playing back the sequence" state; it is what press handling checks.
   let montreEnCours = false;
+  let arreterConfirme = false;
+  /** The current board's stop button, so resetArreter() can relabel it
+      without rebuilding the screen — same pattern as the paires screen. */
+  let arreterBouton = null;
+
+  function resetArreter() {
+    if (!arreterConfirme) return;
+    arreterConfirme = false;
+    if (arreterBouton) arreterBouton.textContent = 'Arrêter';
+  }
 
   function annulerFlux() {
     if (timer === null) return;
@@ -61,6 +71,8 @@ export function mountSequence(container, { stats, storage, onQuit }) {
     peindreCourant = null;
     allumerCourant = null;
     montreEnCours = false;
+    arreterBouton = null;
+    arreterConfirme = false;
     container.replaceChildren(game ? renderGame() : renderMenu());
   }
 
@@ -71,7 +83,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
         class: 'sous-titre',
         text: 'Regardez la suite, puis répétez-la. Elle s’allonge à chaque réussite.',
       }),
-      element('p', { text: `Vitesse : ${LIBELLES_VITESSE[vitesse]}` }),
+      element('p', { text: `Vitesse\u00a0: ${LIBELLES_VITESSE[vitesse]}` }),
     ];
     for (const nom of Object.keys(VITESSES)) {
       enfants.push(button(LIBELLES_VITESSE[nom], () => {
@@ -80,7 +92,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
         render();
       }, nom === vitesse ? {} : { className: 'bouton bouton--discret' }));
     }
-    enfants.push(button(`Son : ${son.muted ? 'non' : 'oui'}`, () => {
+    enfants.push(button(`Son\u00a0: ${son.muted ? 'non' : 'oui'}`, () => {
       son.setMuted(!son.muted);
       storage.set('sequence.muet', son.muted);
       render();
@@ -103,7 +115,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
 
   function renderGame() {
     const pourJeu = game;
-    const compteur = element('p', { class: 'sous-titre' });
+    const compteur = element('p', { class: 'sous-titre', role: 'status' });
     const grille = element('div', { class: 'zones-sequence' });
     const boutons = new Map();
 
@@ -120,7 +132,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
       const longueur = game.sequence.length;
       compteur.textContent = game.phase === 'montre' && longueur === 0
         ? 'Regardez bien…'
-        : `Suite de ${longueur} — record du tour : ${game.longueur}`;
+        : `Suite de ${longueur} — record du tour\u00a0: ${game.longueur}`;
       for (const b of boutons.values()) {
         b.disabled = montreEnCours || game.phase !== 'repete';
       }
@@ -139,6 +151,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
     }
 
     function repondre(zoneId) {
+      resetArreter();
       if (game !== pourJeu || montreEnCours || game.phase !== 'repete') return;
       allumer(zoneId, 240);
       const verdict = game.press(zoneId);
@@ -146,6 +159,18 @@ export function mountSequence(container, { stats, storage, onQuit }) {
       if (verdict === 'faux') { plus_tard(700, () => finir(pourJeu)); return; }
       if (verdict === 'fini') plus_tard(700, () => tourSuivant(pourJeu));
     }
+
+    const arreter = button('Arrêter', () => {
+      if (!arreterConfirme) {
+        arreterConfirme = true;
+        arreter.textContent = 'Confirmer l’arrêt';
+        return;
+      }
+      annuler();
+      game = null;
+      render();
+    }, { className: 'bouton bouton--discret' });
+    arreterBouton = arreter;
 
     // Handed up to mount scope so tourSuivant() can drive the board without
     // stashing functions on the DOM node — which the next render would silently
@@ -157,8 +182,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
       compteur,
       grille,
       element('div', { class: 'actions-sequence' }, [
-        button('Arrêter', () => { annuler(); game = null; render(); },
-          { className: 'bouton bouton--discret' }),
+        arreter,
       ]),
     ]);
   }
@@ -186,8 +210,12 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   }
 
   function finir(pourJeu) {
-    annuler();
+    // Identity checked before cancelling anything: the paires screen does it
+    // in this order too. A stale finir() call must never be able to reach
+    // in and cancel the CURRENT game's live timer as a side effect of
+    // checking whether it still applies.
     if (game !== pourJeu) return;
+    annuler();
     const longueur = pourJeu.longueur;
     stats.record('sequence', longueur);
     game = null;
@@ -205,5 +233,5 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   }
 
   render();
-  return () => annuler();
+  return () => { annuler(); son.close(); };
 }
