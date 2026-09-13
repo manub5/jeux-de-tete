@@ -128,6 +128,28 @@ test("une partie terminée n'accepte plus aucun retournement", () => {
   assert.equal(jeu.flips, avant);
 });
 
+test('la garde de phase refuse un retournement même si la carte, elle, semble jouable', () => {
+  // In a normally finished game every card is appariee: the per-card guard
+  // (carte.appariee || carte.montree) alone would already refuse everything,
+  // never going through the phase guard. This forces one card back to
+  // "playable" to isolate that second guard — the only protection left
+  // against internal state manipulated some way other than flip()/resolve()
+  // (the cards getter returns the live reference).
+  const jeu = partie();
+  while (jeu.phase === 'en cours') {
+    const premier = jeu.cards.findIndex((c) => !c.appariee);
+    const jumeau = jeu.cards.findIndex(
+      (c, i) => i !== premier && !c.appariee && c.symbole === jeu.cards[premier].symbole);
+    jeu.flip(premier);
+    jeu.flip(jumeau);
+  }
+  jeu.cards[0].appariee = false;
+  jeu.cards[0].montree = false;
+  const avant = jeu.flips;
+  jeu.flip(0);
+  assert.equal(jeu.flips, avant, 'phase === "terminée" doit à elle seule refuser tout retournement');
+});
+
 test('deux graines différentes donnent deux plateaux différents', () => {
   const a = partie('facile', 1).cards.map((c) => c.symbole).join();
   const b = partie('facile', 2).cards.map((c) => c.symbole).join();
