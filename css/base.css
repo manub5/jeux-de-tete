@@ -170,3 +170,9 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 .objectif { font-weight: 600; }
 
 .sous-titre { color: var(--texte-faible); margin: 0 0 var(--marge); }
+
+/* The home menu's own list: seven games, each with a button and this
+   subtitle, plus "Statistiques" — the ordinary `.sous-titre` bottom margin
+   pushed the last one below the fold at 360x780 (essai_hauteurs.py). Tighter
+   here only; every other screen's `.sous-titre` keeps its usual spacing. */
+.sous-titre--accueil { margin-bottom: 2px; }

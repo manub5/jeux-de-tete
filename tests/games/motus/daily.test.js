@@ -167,6 +167,70 @@ test('a storage that refuses to forget never turns an unfaithful replay into a f
   assert.equal(jour.result, null);
 });
 
+test('a fresh day has not been scored yet', () => {
+  const jour = createDaily({ ...outils(createStorage(backend())), day: '2026-09-11' });
+  assert.equal(jour.scored, false);
+});
+
+test('markScored() persists, so a later opening the same day sees it', () => {
+  const store = createStorage(backend());
+  const premier = createDaily({ ...outils(store), day: '2026-09-11' });
+  premier.game.giveUp();
+  assert.equal(premier.scored, false, 'giveUp() alone does not score it — only markScored() does');
+  premier.markScored();
+  assert.equal(premier.scored, true);
+
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.scored, true,
+    'une visite plus tard le même jour doit retrouver le drapeau posé par markScored()');
+});
+
+test('a new day never inherits the previous day\'s scored flag', () => {
+  const store = createStorage(backend());
+  const premier = createDaily({ ...outils(store), day: '2026-09-11' });
+  premier.game.giveUp();
+  premier.markScored();
+
+  const lendemain = createDaily({ ...outils(store), day: '2026-09-12' });
+  assert.equal(lendemain.scored, false);
+});
+
+test('a finished save this build wrote, but not yet scored, reads as not yet scored', () => {
+  // The exact shape a silent loss leaves behind: the grid replays to a
+  // finished game, but no markScored() call ever ran — screen.js's recovery
+  // check needs `scored` to read false here to catch it. Distinct from the
+  // test below: here `scored` is genuinely present, just false — this
+  // build's own save() always writes it, true or false.
+  const back = backend();
+  const store = createStorage(back);
+  createDaily({ ...outils(store), day: '2026-09-11' }).game.giveUp();
+  assert.equal(store.get(SAVE_KEY, null).scored, false);
+
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.alreadyPlayed, true);
+  assert.equal(reprise.scored, false);
+});
+
+test('an old save from before `scored` existed reads as already scored, not lost', () => {
+  // A save with no `scored` field at all cannot have been written by this
+  // build — save() always includes it. It can only be a save from before
+  // this field existed, whose sole recording path was finish()'s
+  // unconditional stats.record() — already run. Defaulting an absent field
+  // to false, the way a genuinely unscored save reads, would double-count
+  // this same result the very next time he opens Motus after updating.
+  const back = backend();
+  const store = createStorage(back);
+  createDaily({ ...outils(store), day: '2026-09-11' }).game.giveUp();
+  const brut = store.get(SAVE_KEY, null);
+  delete brut.scored;
+  back.setItem('jp:motus.jour', JSON.stringify(brut));
+
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.alreadyPlayed, true);
+  assert.equal(reprise.scored, true,
+    'sans champ scored, une sauvegarde déjà finie doit se lire comme déjà notée (compat avant ce lot)');
+});
+
 test('a day he gave up on stays given up, and is not handed back to him', () => {
   // Giving up is not an attempt, so the rows cannot replay to an ending. That
   // is not corruption, and the day must not start over.

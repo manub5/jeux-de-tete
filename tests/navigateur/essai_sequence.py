@@ -18,6 +18,14 @@ rapport = Rapport()
 dit = rapport.dit
 exige = rapport.exige
 
+#: Both button and sous-titre labels carry a no-break space before the colon
+#: — French typography, same convention documented in essai_sudoku.py.
+#: Written as an escape: an invisible character in the source is the kind of
+#: thing a later edit silently drops.
+SON_OUI = "Son\u00a0: oui"
+SON_NON = "Son\u00a0: non"
+VITESSE_LENTE = "Vitesse\u00a0: Lente"
+
 ZONES_ACTIVES = (
     "() => [...document.querySelectorAll('.zone-sequence')].some(b => !b.disabled)"
 )
@@ -71,16 +79,14 @@ with sync_playwright() as pw:
     dit(f"  boutons : {boutons}")
     for libelle in ("Lente", "Normale", "Rapide"):
         exige(libelle in boutons, f"la vitesse « {libelle} » est proposée")
-    exige(
-        "Son : oui" in boutons, "la coupure du son est proposée (son activé par défaut)"
-    )
+    exige(SON_OUI in boutons, "la coupure du son est proposée (son activé par défaut)")
 
     dit("== Le réglage survit à un rechargement ==")
     page.click("text=Lente")
-    page.click("text=Son : oui")
+    page.click(f"text={SON_OUI}")
     page.wait_for_timeout(80)
     exige(
-        "Vitesse : Lente" in page.locator("#app").inner_text(),
+        VITESSE_LENTE in page.locator("#app").inner_text(),
         "la vitesse choisie est affichée avant même de rejouer",
     )
     page.reload(wait_until="networkidle")
@@ -88,9 +94,9 @@ with sync_playwright() as pw:
     ouvrir_sequence(page)
     apres = page.locator("#app").inner_text()
     dit(f"  après rechargement : {[l for l in apres.splitlines() if l.strip()]}")
-    exige("Vitesse : Lente" in apres, "la vitesse choisie survit au rechargement")
+    exige(VITESSE_LENTE in apres, "la vitesse choisie survit au rechargement")
     exige(
-        "Son : non" in page.locator("#app button").all_text_contents(),
+        SON_NON in page.locator("#app button").all_text_contents(),
         "la coupure du son survit au rechargement",
     )
 
@@ -133,7 +139,7 @@ with sync_playwright() as pw:
     compteur = page.locator(".sous-titre").inner_text()
     dit(f"  {compteur!r}")
     exige(
-        f"record du tour : {len(dernier_seq)}" in compteur,
+        f"record du tour\u00a0: {len(dernier_seq)}" in compteur,
         "le compteur retient le record atteint",
     )
 

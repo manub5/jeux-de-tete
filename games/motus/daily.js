@@ -23,19 +23,35 @@ function asSaved(raw, day) {
   // and let a fresh day overwrite it.
   if (!Array.isArray(raw.rows)) return null;
   const rows = raw.rows.filter((w) => typeof w === 'string');
-  return { rows, finished: raw.finished === true };
+  // A save with no `scored` field at all predates this field: it can only
+  // have been written by a build where finish() was the sole recording
+  // path, unconditionally, so a finished save from back then already
+  // reached stats. Reading that as "not yet scored" would double-count it
+  // the moment he next opens Motus after the update — a permanent, silent
+  // error in his own record. `'scored' in raw` (not `=== true`) is what
+  // tells an old save (absent) apart from a genuine one this build wrote
+  // (always present, possibly false — see save() below).
+  const scored = 'scored' in raw ? raw.scored === true : raw.finished === true;
+  return { rows, finished: raw.finished === true, scored };
 }
 
 export function createDaily({ lexicon, storage, frequencies, day, mayRestart = true }) {
   const word = dailyWord(frequencies, day);
   const game = createMotus({ lexicon, frequencies, length: DAILY_LENGTH, word });
   const saved = asSaved(storage.get(SAVE_KEY, null), day);
+  // Whether today's result has already reached core/stats.js. Kept here,
+  // day-scoped and persisted on its own, rather than read off
+  // stats.read('motus').lastPlayed: that timestamp is shared with free-play
+  // games, so a free round played the same day would otherwise mask a
+  // daily score that screen.js's finish() never actually recorded.
+  let scored = saved ? saved.scored : false;
 
   function save() {
     storage.set(SAVE_KEY, {
       day,
       rows: game.rows.map((row) => row.word),
       finished: game.phase === 'terminée',
+      scored,
     });
   }
 
@@ -93,5 +109,16 @@ export function createDaily({ lexicon, storage, frequencies, day, mayRestart = t
     game,
     alreadyPlayed: game.phase === 'terminée',
     result: game.result,
+    get scored() { return scored; },
+    /**
+     * Called once the result has actually reached core/stats.js — from
+     * screen.js's finish() (the normal path) or from its own recovery check
+     * (renderMenu(), when finish() never ran). Persisted immediately, so a
+     * later visit the same day — daily or free-play — never re-records it.
+     */
+    markScored() {
+      scored = true;
+      save();
+    },
   };
 }

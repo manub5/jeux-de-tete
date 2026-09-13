@@ -4,14 +4,16 @@
 // CACHE_VERSION MUST be bumped on every deployment. Forgetting it is the
 // classic failure of this kind of app: the old files are served forever and
 // nobody understands why nothing changes.
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_PREFIX = 'jeux-de-tete-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 const ASSETS = [
   './',
+  'core/backup.js',
   'core/rng.js',
   'core/router.js',
+  'core/stats-screen.js',
   'core/stats.js',
   'core/storage.js',
   'core/ui.js',
@@ -22,6 +24,7 @@ const ASSETS = [
   'css/motus.css',
   'css/paires.css',
   'css/sequence.css',
+  'css/statistiques.css',
   'css/sudoku.css',
   'css/tous-les-mots.css',
   'data/frequences.txt.gz',
