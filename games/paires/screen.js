@@ -82,7 +82,7 @@ export function mountPairs(container, { stats, storage, onQuit }) {
 
   function renderGame() {
     const pourJeu = game;
-    const compteur = element('p', { class: 'sous-titre' });
+    const compteur = element('p', { class: 'sous-titre', role: 'status' });
     const plateau = element('div', { class: 'plateau-paires' });
     plateau.style.setProperty('--colonnes-paires', String(game.colonnes));
 
@@ -184,11 +184,11 @@ export function mountPairs(container, { stats, storage, onQuit }) {
     clearSave(storage);
     game = null;
     container.replaceChildren(element('div', {}, [
-      element('h1', { text: 'Toutes les paires sont trouvées !' }),
+      element('h1', { text: 'Toutes les paires sont trouvées\u00a0!' }),
       element('p', {
         class: 'score',
         text: flips === minimum
-          ? `En ${flips} retournements : le minimum possible. Sans une seule erreur.`
+          ? `En ${flips} retournements\u00a0: le minimum possible. Sans une seule erreur.`
           : `En ${flips} retournements, pour un minimum de ${minimum}.`,
       }),
       button('Nouvelle partie', () => start(pourJeu.niveau)),
@@ -196,6 +196,17 @@ export function mountPairs(container, { stats, storage, onQuit }) {
     ]));
   }
 
-  render();
+  // If the app was killed in the 700ms window between the winning flip and
+  // finish() actually running (programmerFin), the save still holds a
+  // 'terminée' board whose score was never recorded. resumableSave()
+  // correctly hides a finished game from "Reprendre" — so without this
+  // check it would just vanish on the next visit, no message, no stats.
+  // Same recovery the sudoku screen makes at mount, for the same reason.
+  const sauveTerminee = loadGame(storage);
+  if (sauveTerminee && sauveTerminee.phase === 'terminée') {
+    finish(sauveTerminee);
+  } else {
+    render();
+  }
   return () => annulerMinuteries();
 }
