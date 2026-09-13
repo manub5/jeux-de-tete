@@ -58,19 +58,24 @@ export function mountStatistiques(container, { stats, storage, games, onQuit }) 
           return;
         }
         const ok = importBackup(storage, gameIds, analyse);
-        message.textContent = ok
-          ? 'Sauvegarde restaurée.'
-          : 'Ce fichier n’a pas la forme d’une sauvegarde de ce jeu.';
-        if (ok) render();
+        if (ok) {
+          // render() replaces the whole screen, including this very `message`
+          // node: setting its textContent first and re-rendering right after
+          // throws that text away before the browser ever paints it. The
+          // confirmation has to be handed to the new node render() builds.
+          render('Sauvegarde restaurée.');
+        } else {
+          message.textContent = 'Ce fichier n’a pas la forme d’une sauvegarde de ce jeu.';
+        }
       })
       .catch(() => {
         message.textContent = 'Ce fichier n’a pas pu être lu.';
       });
   }
 
-  function render() {
+  function render(messageInitial = '') {
     const streak = stats.streak();
-    const message = element('p', { class: 'sous-titre', role: 'status' });
+    const message = element('p', { class: 'sous-titre', role: 'status', text: messageInitial });
     const fichierInput = element('input', {
       type: 'file', accept: 'application/json',
     });
