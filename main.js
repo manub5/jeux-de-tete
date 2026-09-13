@@ -120,6 +120,16 @@ function home(target) {
       })
     );
   }
+  if (!storage.available) {
+    target.append(
+      element('p', {
+        class: 'sous-titre',
+        text:
+          'Le stockage est indisponible : tes scores et tes préférences ' +
+          'ne seront pas conservés cette fois.',
+      })
+    );
+  }
   const streak = stats.streak();
   if (streak > 1) {
     target.append(element('p', { text: `${streak} jours d’affilée.` }));
