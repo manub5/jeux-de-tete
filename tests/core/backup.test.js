@@ -53,6 +53,34 @@ test('un jeu jamais joué est absent de l\'export, pas mis à zéro', () => {
   assert.ok('sudoku' in sauvegarde.stats);
 });
 
+test('un jeu qui a des statistiques mais n\'est pas demandé n\'apparaît pas dans l\'export', () => {
+  // `anagrammes` a de vraies statistiques dans le stockage, mais IDS ne le
+  // demande pas : exportBackup doit filtrer par le paramètre reçu, jamais
+  // parcourir le stockage en aveugle ni une liste de jeux globale.
+  const storage = createStorage(fakeBackend());
+  storage.set('stats.anagrammes', { played: 7, best: 3, recent: [3, 4], lastPlayed: '2026-09-01' });
+  storage.set('stats.sudoku', { played: 1, best: 5, recent: [5], lastPlayed: '2026-09-01' });
+  const sauvegarde = exportBackup(storage, IDS);
+  assert.ok(!('anagrammes' in sauvegarde.stats),
+    'un jeu hors de la liste demandée ne doit jamais fuir dans l\'export');
+});
+
+test('importer une sauvegarde qui contient un jeu non demandé ne l\'écrit pas', () => {
+  // Symétrique du test précédent, côté import : une sauvegarde peut contenir
+  // des jeux que l'appelant ne demande pas (par ex. une sauvegarde plus
+  // ancienne, ou faite avec une autre liste de jeux) ; importBackup ne doit
+  // écrire que ce que gameIds autorise.
+  const storage = createStorage(fakeBackend());
+  const sauvegarde = {
+    version: 1,
+    stats: { anagrammes: { played: 7, best: 3, recent: [3], lastPlayed: '2026-09-01' } },
+    preferences: {},
+  };
+  assert.equal(importBackup(storage, IDS, sauvegarde), true);
+  assert.equal(storage.get('stats.anagrammes', null), null,
+    'un jeu hors de la liste demandée ne doit jamais être écrit par une restauration');
+});
+
 test('importBackup refuse un fichier qui n\'a pas la forme d\'une sauvegarde', () => {
   const storage = createStorage(fakeBackend());
   storage.set('stats.sudoku', { played: 9, best: 1, recent: [1], lastPlayed: '2026-09-01' });
