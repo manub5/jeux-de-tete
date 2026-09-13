@@ -22,14 +22,34 @@ function wordList(value) {
 }
 
 function correctionsFrom(store) {
-  const saved = store.get('corrections', null) ?? {};
-  const accepted = new Set(wordList(saved.accepted));
-  const rejected = new Set(wordList(saved.rejected));
+  function lire() {
+    return store.get('corrections', null) ?? {};
+  }
+  let accepted = new Set(wordList(lire().accepted));
+  let rejected = new Set(wordList(lire().rejected));
   return {
-    accepted,
-    rejected,
+    // Getters, not plain properties: createLexicon() keeps this same object
+    // for the whole session, and reads `.accepted`/`.rejected` fresh on
+    // every validate()/accept()/reject() call. A restored backup calls
+    // reload() below, which only makes sense if those reads can pick up the
+    // new sets — a plain property captured at construction time never would.
+    get accepted() { return accepted; },
+    get rejected() { return rejected; },
     save() {
       store.set('corrections', { accepted: [...accepted], rejected: [...rejected] });
+    },
+    /**
+     * Re-reads storage into fresh sets. Without this, restoring a backup
+     * writes `corrections` to storage but leaves the sets createLexicon()
+     * already captured untouched — a restored word would stay invisible to
+     * validate() until a reload, and the very next accept()/reject() would
+     * overwrite the restored storage with the stale in-memory state,
+     * silently erasing it for good.
+     */
+    reload() {
+      const donnees = lire();
+      accepted = new Set(wordList(donnees.accepted));
+      rejected = new Set(wordList(donnees.rejected));
     },
   };
 }
@@ -96,6 +116,31 @@ let frequenciesAvailable = true;
 
 function home(target) {
   target.append(element('h1', { text: 'Jeux de tête' }));
+  // Both warnings sit right under the title, before the game list: they are
+  // not commands, and essai_hauteurs.py already shows the list itself
+  // reaching the fold at 360x780 — anything placed after it would be
+  // invisible exactly when it matters most (a degraded mode nobody can
+  // scroll to see is close to as silent as no warning at all).
+  if (!frequenciesAvailable) {
+    target.append(
+      element('p', {
+        class: 'sous-titre',
+        text:
+          'La liste des mots courants n’a pas pu être ouverte\u00a0: certains ' +
+          'jeux sont indisponibles pour l’instant.',
+      })
+    );
+  }
+  if (!storage.available) {
+    target.append(
+      element('p', {
+        class: 'sous-titre',
+        text:
+          'Le stockage est indisponible\u00a0: tes scores et tes préférences ' +
+          'ne seront pas conservés cette fois.',
+      })
+    );
+  }
   for (const game of visibleGames) {
     const record = stats.read(game.id);
     target.append(
@@ -121,26 +166,6 @@ function home(target) {
     button('Statistiques', () => router.go('statistiques'),
       { className: 'bouton bouton--discret' })
   );
-  if (!frequenciesAvailable) {
-    target.append(
-      element('p', {
-        class: 'sous-titre',
-        text:
-          'La liste des mots courants n’a pas pu être ouverte\u00a0: certains ' +
-          'jeux sont indisponibles pour l’instant.',
-      })
-    );
-  }
-  if (!storage.available) {
-    target.append(
-      element('p', {
-        class: 'sous-titre',
-        text:
-          'Le stockage est indisponible\u00a0: tes scores et tes préférences ' +
-          'ne seront pas conservés cette fois.',
-      })
-    );
-  }
   const streak = stats.streak();
   if (streak > 1) {
     target.append(element('p', { text: `${streak} jours d’affilée.` }));
@@ -166,7 +191,8 @@ async function start() {
     }
 
     const solver = createSolver(index);
-    const lexicon = createLexicon(index, correctionsFrom(storage));
+    const corrections = correctionsFrom(storage);
+    const lexicon = createLexicon(index, corrections);
     const tools = {
       solver, lexicon, stats, storage, frequencies,
       onQuit: () => router.go('accueil'),
@@ -176,8 +202,14 @@ async function start() {
     visibleGames = GAMES.filter((game) => !game.needsFrequencies || frequenciesAvailable);
 
     const routes = { accueil: home };
+    // GAMES, not visibleGames: a backup must cover every game that has ever
+    // recorded a score, including the three that need the frequency list —
+    // they only stop being playable while it is missing, their past stats
+    // do not stop existing. Passing the degraded list would silently leave
+    // them out of every export made while frequencies are unavailable.
     routes.statistiques = (target) => mountStatistiques(target, {
-      stats, storage, games: visibleGames, onQuit: () => router.go('accueil'),
+      stats, storage, games: GAMES, onQuit: () => router.go('accueil'),
+      onRestore: () => corrections.reload(),
     });
     for (const game of visibleGames) {
       routes[game.id] = (target) => game.mount(target, tools);
