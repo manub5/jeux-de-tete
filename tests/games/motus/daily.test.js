@@ -195,22 +195,40 @@ test('a new day never inherits the previous day\'s scored flag', () => {
   assert.equal(lendemain.scored, false);
 });
 
-test('a finished save without a scored flag reads as not yet scored', () => {
+test('a finished save this build wrote, but not yet scored, reads as not yet scored', () => {
   // The exact shape a silent loss leaves behind: the grid replays to a
   // finished game, but no markScored() call ever ran — screen.js's recovery
-  // check needs `scored` to read false here to catch it.
+  // check needs `scored` to read false here to catch it. Distinct from the
+  // test below: here `scored` is genuinely present, just false — this
+  // build's own save() always writes it, true or false.
   const back = backend();
   const store = createStorage(back);
   createDaily({ ...outils(store), day: '2026-09-11' }).game.giveUp();
-  // Simulate an older save written before `scored` existed, or one saved by
-  // a build that crashed before markScored() ran.
+  assert.equal(store.get(SAVE_KEY, null).scored, false);
+
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.alreadyPlayed, true);
+  assert.equal(reprise.scored, false);
+});
+
+test('an old save from before `scored` existed reads as already scored, not lost', () => {
+  // A save with no `scored` field at all cannot have been written by this
+  // build — save() always includes it. It can only be a save from before
+  // this field existed, whose sole recording path was finish()'s
+  // unconditional stats.record() — already run. Defaulting an absent field
+  // to false, the way a genuinely unscored save reads, would double-count
+  // this same result the very next time he opens Motus after updating.
+  const back = backend();
+  const store = createStorage(back);
+  createDaily({ ...outils(store), day: '2026-09-11' }).game.giveUp();
   const brut = store.get(SAVE_KEY, null);
   delete brut.scored;
   back.setItem('jp:motus.jour', JSON.stringify(brut));
 
   const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
   assert.equal(reprise.alreadyPlayed, true);
-  assert.equal(reprise.scored, false);
+  assert.equal(reprise.scored, true,
+    'sans champ scored, une sauvegarde déjà finie doit se lire comme déjà notée (compat avant ce lot)');
 });
 
 test('a day he gave up on stays given up, and is not handed back to him', () => {
