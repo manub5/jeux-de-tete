@@ -127,7 +127,7 @@ with sync_playwright() as pw:
     )
     caches = page.evaluate("() => caches.keys()")
     dit(f"  caches : {caches}")
-    exige(any("v5" in c for c in caches), "le cache est en v5")
+    exige(any("v6" in c for c in caches), "le cache est en v6")
     ctx.set_offline(True)
     for jeu, marqueur in HORS_LIGNE:
         au_menu(page)
