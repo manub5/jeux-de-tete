@@ -22,9 +22,9 @@ exige = rapport.exige
 #: — French typography, same convention documented in essai_sudoku.py.
 #: Written as an escape: an invisible character in the source is the kind of
 #: thing a later edit silently drops.
-SON_OUI = "Son : oui"
-SON_NON = "Son : non"
-VITESSE_LENTE = "Vitesse : Lente"
+SON_OUI = "Son\u00a0: oui"
+SON_NON = "Son\u00a0: non"
+VITESSE_LENTE = "Vitesse\u00a0: Lente"
 
 ZONES_ACTIVES = (
     "() => [...document.querySelectorAll('.zone-sequence')].some(b => !b.disabled)"
@@ -139,7 +139,7 @@ with sync_playwright() as pw:
     compteur = page.locator(".sous-titre").inner_text()
     dit(f"  {compteur!r}")
     exige(
-        f"record du tour : {len(dernier_seq)}" in compteur,
+        f"record du tour\u00a0: {len(dernier_seq)}" in compteur,
         "le compteur retient le record atteint",
     )
 
