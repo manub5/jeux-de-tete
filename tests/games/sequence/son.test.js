@@ -100,6 +100,16 @@ test('close() libère le contexte audio', () => {
   assert.equal(contexte.fermetures, 1);
 });
 
+test('close() n’échappe pas si contexte.close() rejette (déjà fermé)', async () => {
+  // AudioContext.close() rejette une InvalidStateError sur un contexte déjà
+  // fermé — un simple try/catch synchrone ne garde pas ce rejet, seulement
+  // un lever immédiat.
+  const contexte = fauxContexte();
+  contexte.close = () => Promise.reject(new Error('déjà fermé'));
+  const son = createSound({ audioContext: contexte });
+  await son.close();   // ne doit pas rejeter
+});
+
 test('close() sans contexte ne lève pas', () => {
   const son = createSound({ audioContext: null });
   son.close();   // silencieux, pas une exception

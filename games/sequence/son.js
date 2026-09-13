@@ -67,7 +67,13 @@ export function createSound({ audioContext } = {}) {
   function close() {
     if (!contexte) return;
     try {
-      contexte.close();
+      // AudioContext.close() returns a promise that REJECTS if the context
+      // is already closed — a plain try/catch only guards the synchronous
+      // throw, not that later rejection. Wrapping the result in
+      // Promise.resolve() lets the same .catch() swallow both, and
+      // returning the chain lets a test await it instead of trusting that
+      // no crash means no unhandled rejection escaped.
+      return Promise.resolve(contexte.close()).catch(() => {});
     } catch {
       // Already closed, or closing isn't supported: nothing left to release.
     }
