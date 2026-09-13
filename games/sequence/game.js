@@ -33,7 +33,12 @@ export function createSequenceGame({ rng }) {
     // longueur to hold the count of correct presses made before the failing
     // one, even mid-round. Setting it only inside the 'fini' branch (as an
     // earlier draft of this file did) leaves it at 0 in that exact case.
-    longueur = position;
+    // Math.max, not a plain assignment: allonger() resets position to 0 for
+    // every new round, so a plain assignment made the record REGRESS the
+    // instant the player answered correctly in a later, longer round — the
+    // final review caught this live (round 6 dropping the shown record from
+    // 5 to 1 after a single correct press).
+    longueur = Math.max(longueur, position);
     if (position === sequence.length) {
       phase = 'montre';
       return 'fini';

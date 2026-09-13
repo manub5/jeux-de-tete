@@ -66,6 +66,18 @@ test('une partie perdue n\'accepte plus aucun appui', () => {
   assert.equal(jeu.longueur, 0);
 });
 
+test('allonger() apres une partie perdue ne fait rien', () => {
+  const jeu = partie();
+  jeu.allonger();
+  jeu.press(IDS.find((id) => id !== jeu.sequence[0]));
+  assert.equal(jeu.phase, 'perdu');
+  const sequenceAvant = [...jeu.sequence];
+  jeu.allonger();
+  assert.deepEqual(jeu.sequence, sequenceAvant,
+    'une partie perdue ne doit plus jamais grandir');
+  assert.equal(jeu.phase, 'perdu');
+});
+
 test('une zone inconnue est une faute, pas une exception', () => {
   const jeu = partie();
   jeu.allonger();
@@ -103,6 +115,32 @@ test('un nouveau tour repart de zero apres un tour gagne', () => {
   assert.equal(jeu.sequence.length, 2);
   assert.equal(jeu.press(jeu.sequence[0]), 'juste');
   assert.equal(jeu.press(jeu.sequence[1]), 'fini');
+});
+
+test('le record ne redescend jamais tant que la partie n\'est pas perdue', () => {
+  // allonger() resets position to 0 every round: a plain assignment
+  // longueur = position would make the shown record drop on the very first
+  // correct press of the next round (5 -> 1 instead of staying at 5 then
+  // climbing to 6). Found by the final review, invisible to single-round
+  // tests.
+  const jeu = partie(2);
+  for (let tour = 1; tour <= 3; tour++) {
+    const recordAvantTour = jeu.longueur;
+    jeu.allonger();
+    for (let i = 0; i < jeu.sequence.length; i++) {
+      const verdict = jeu.press(jeu.sequence[i]);
+      assert.ok(jeu.longueur >= recordAvantTour,
+        `tour ${tour}, position ${i} : le record (${jeu.longueur}) ne doit jamais `
+        + `retomber sous ce qu'il valait avant ce tour (${recordAvantTour})`);
+      if (i < jeu.sequence.length - 1) assert.equal(verdict, 'juste');
+      else assert.equal(verdict, 'fini');
+    }
+    assert.equal(jeu.longueur, tour, `apres le tour ${tour}, le record vaut ${tour}`);
+  }
+  jeu.allonger();
+  const faux = IDS.find((id) => id !== jeu.sequence[0]);
+  assert.equal(jeu.press(faux), 'faux');
+  assert.equal(jeu.longueur, 3, 'la partie a echoue au premier appui du tour 4 : record reste 3');
 });
 
 test('press(undefined) sur une partie neuve est une faute, pas un appui valide', () => {
