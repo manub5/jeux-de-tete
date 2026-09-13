@@ -8,7 +8,7 @@ import { exportBackup, importBackup } from './backup.js';
 
 const NOM_FICHIER = 'jeux-de-tete-sauvegarde.json';
 
-export function mountStatistiques(container, { stats, storage, games, onQuit }) {
+export function mountStatistiques(container, { stats, storage, games, onQuit, onRestore }) {
   const gameIds = games.map((g) => g.id);
 
   function ligneJeu(jeu) {
@@ -40,8 +40,16 @@ export function mountStatistiques(container, { stats, storage, games, onQuit }) 
     const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const lien = element('a', { href: url, download: NOM_FICHIER });
+    // Attached, clicked, removed: works untouched on every evergreen browser,
+    // but a link never in the document is the one shape some older ones
+    // refuse to trigger — and refusing silently, with no message and nothing
+    // in the console, is the one failure of this feature he could not tell
+    // apart from "nothing happened, try again". Revoking a tick later, not
+    // synchronously, leaves the download itself time to actually start.
+    document.body.append(lien);
     lien.click();
-    URL.revokeObjectURL(url);
+    lien.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function restaurer(fichierInput, message) {
@@ -59,6 +67,13 @@ export function mountStatistiques(container, { stats, storage, games, onQuit }) 
         }
         const ok = importBackup(storage, gameIds, analyse);
         if (ok) {
+          // The corrections lexicon.js already holds in memory were captured
+          // once at startup: importBackup() only wrote storage, so without
+          // this, a restored word stays invisible to validate() until a
+          // reload, and the next accept()/reject() would overwrite the
+          // restored storage with that stale in-memory state — erasing it
+          // for good.
+          onRestore?.();
           // render() replaces the whole screen, including this very `message`
           // node: setting its textContent first and re-rendering right after
           // throws that text away before the browser ever paints it. The
