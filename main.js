@@ -101,7 +101,13 @@ function home(target) {
     target.append(
       button(game.title, () => router.go(game.id)),
       element('p', {
-        class: 'sous-titre',
+        // A modifier of its own, not just `.sous-titre`: seven of these plus
+        // the "Statistiques" button pushed the last one below the fold at
+        // 360x780 (essai_hauteurs.py, task 5) — the ordinary reading spacing
+        // is more than a list this long can afford. Scoped here so no other
+        // screen's `.sous-titre` (Motus's record line, a game's own counter)
+        // loses anything.
+        class: 'sous-titre sous-titre--accueil',
         // One played game must read "1 partie", not "1 parties". The average was
         // on his screen before the menu grew to three games, so it stays.
         text: record.played
