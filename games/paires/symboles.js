@@ -8,14 +8,6 @@
 // the riskiest pair — which nobody confuses — and missed the two the eye caught.
 // Whoever changes this list must look at it rendered at 33px, not trust a test.
 
-/** A stroked path: thick enough to read as a silhouette at 33px. */
-const T = (d) =>
-  `<path d="${d}" fill="none" stroke="currentColor" stroke-width="14" ` +
-  `stroke-linecap="round" stroke-linejoin="round"/>`;
-
-/** A filled path. */
-const P = (d) => `<path d="${d}" fill="currentColor"/>`;
-
 /**
  * A stroked path with a chosen width: the shapes made of several parallel
  * strokes need a thinner line, otherwise the gaps between them close up and
@@ -25,9 +17,18 @@ const TF = (d, epaisseur) =>
   `<path d="${d}" fill="none" stroke="currentColor" stroke-width="${epaisseur}" ` +
   `stroke-linecap="round" stroke-linejoin="round"/>`;
 
+/** A stroked path at the default width: thick enough to read as a
+    silhouette at 33px. Just TF at a fixed width — kept as its own name
+    because most symbols call it and "14" isn't a number worth repeating
+    at every call site. */
+const T = (d) => TF(d, 14);
+
+/** A filled path. */
+const P = (d) => `<path d="${d}" fill="currentColor"/>`;
+
 export const SYMBOLES = [
-  // Les vingt-cinq qui ont passé le regard à 33 px. Tracés tels quels :
-  // ne les redessine pas, ils ont déjà été vérifiés à l'œil.
+  // The twenty-five that passed the eye check at 33px. Traced as they are:
+  // don't redraw them, they have already been verified by eye.
   { id: 'rond', libelle: 'rond', corps: '<circle cx="50" cy="50" r="38" fill="currentColor"/>' },
   { id: 'carre', libelle: 'carré', corps: '<rect x="14" y="14" width="72" height="72" fill="currentColor"/>' },
   { id: 'triangle', libelle: 'triangle', corps: P('M50 10 L90 84 L10 84 Z') },
@@ -52,14 +53,14 @@ export const SYMBOLES = [
   { id: 'poisson', libelle: 'poisson', corps: P('M8 50 C28 22 66 22 82 50 C66 78 28 78 8 50 Z M82 50 l14 -18 v36 Z') },
   { id: 'parapluie', libelle: 'parapluie', corps: T('M50 90 V44 M8 46 a42 42 0 0 1 84 0 Z M50 90 a12 12 0 0 0 20 -8') },
   { id: 'montagne', libelle: 'montagne', corps: P('M4 84 L34 30 L52 58 L66 40 L96 84 Z') },
-  // « dé » seul fait deux lettres, et le test exige trois caractères au moins :
-  // le libellé est allongé, le tracé n'est pas touché.
+  // "dé" alone is two letters, and the test requires at least three
+  // characters: the label is lengthened, the trace is untouched.
   { id: 'de', libelle: 'dé à jouer', corps: '<rect x="12" y="12" width="76" height="76" rx="12" fill="none" stroke="currentColor" stroke-width="10"/><g fill="currentColor"><circle cx="32" cy="32" r="7"/><circle cx="50" cy="50" r="7"/><circle cx="68" cy="68" r="7"/></g>' },
-  // Les cinq de mon cru, regardés à 33 px (étape 5). Ils remplacent la spirale
-  // ronde, la maison, l'engrenage, la feuille et la clé. Chacun occupe la boîte
-  // autrement que les vingt-cinq précédents : une grille 2×2 à cases alternées,
-  // un rectangle couché, un tracé à angles droits, une échelle de barreaux,
-  // une ondulation.
+  // Five of my own making, looked at at 33px (step 5). They replace the round
+  // spiral, the house, the gear, the leaf and the key. Each occupies the box
+  // differently from the previous twenty-five: a 2x2 grid with alternating
+  // cells, a lying-down rectangle, a right-angled trace, a rung ladder, a
+  // ripple.
   { id: 'damier', libelle: 'damier', corps: '<rect x="10" y="10" width="80" height="80" fill="none" stroke="currentColor" stroke-width="8"/>' + TF('M50 10 V90 M10 50 H90', 8) + '<rect x="14" y="14" width="32" height="32" fill="currentColor"/><rect x="54" y="54" width="32" height="32" fill="currentColor"/>' },
   { id: 'enveloppe', libelle: 'enveloppe', corps: '<rect x="8" y="24" width="84" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="11"/>' + TF('M14 30 L50 58 L86 30', 11) },
   // Named a hook, not a maze or a spiral: this single right-angled line has
