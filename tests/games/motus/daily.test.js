@@ -167,6 +167,52 @@ test('a storage that refuses to forget never turns an unfaithful replay into a f
   assert.equal(jour.result, null);
 });
 
+test('a fresh day has not been scored yet', () => {
+  const jour = createDaily({ ...outils(createStorage(backend())), day: '2026-09-11' });
+  assert.equal(jour.scored, false);
+});
+
+test('markScored() persists, so a later opening the same day sees it', () => {
+  const store = createStorage(backend());
+  const premier = createDaily({ ...outils(store), day: '2026-09-11' });
+  premier.game.giveUp();
+  assert.equal(premier.scored, false, 'giveUp() alone does not score it — only markScored() does');
+  premier.markScored();
+  assert.equal(premier.scored, true);
+
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.scored, true,
+    'une visite plus tard le même jour doit retrouver le drapeau posé par markScored()');
+});
+
+test('a new day never inherits the previous day\'s scored flag', () => {
+  const store = createStorage(backend());
+  const premier = createDaily({ ...outils(store), day: '2026-09-11' });
+  premier.game.giveUp();
+  premier.markScored();
+
+  const lendemain = createDaily({ ...outils(store), day: '2026-09-12' });
+  assert.equal(lendemain.scored, false);
+});
+
+test('a finished save without a scored flag reads as not yet scored', () => {
+  // The exact shape a silent loss leaves behind: the grid replays to a
+  // finished game, but no markScored() call ever ran — screen.js's recovery
+  // check needs `scored` to read false here to catch it.
+  const back = backend();
+  const store = createStorage(back);
+  createDaily({ ...outils(store), day: '2026-09-11' }).game.giveUp();
+  // Simulate an older save written before `scored` existed, or one saved by
+  // a build that crashed before markScored() ran.
+  const brut = store.get(SAVE_KEY, null);
+  delete brut.scored;
+  back.setItem('jp:motus.jour', JSON.stringify(brut));
+
+  const reprise = createDaily({ ...outils(store), day: '2026-09-11' });
+  assert.equal(reprise.alreadyPlayed, true);
+  assert.equal(reprise.scored, false);
+});
+
 test('a day he gave up on stays given up, and is not handed back to him', () => {
   // Giving up is not an attempt, so the rows cannot replay to an ending. That
   // is not corruption, and the day must not start over.
