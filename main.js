@@ -125,7 +125,7 @@ function home(target) {
       element('p', {
         class: 'sous-titre',
         text:
-          'Le stockage est indisponible : tes scores et tes préférences ' +
+          'Le stockage est indisponible\u00a0: tes scores et tes préférences ' +
           'ne seront pas conservés cette fois.',
       })
     );
