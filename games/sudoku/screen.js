@@ -3,6 +3,7 @@
 
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { DIFFICULTIES } from './generate.js';
 import { clearSave, loadOrStart, resumableSave } from './save.js';
 
@@ -242,9 +243,12 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
     clearSave(storage);
     // Fewer mistakes is better, like Motus counts attempts — core/stats.js needs
     // telling, or the menu would show his worst grid as his record.
-    stats.record('sudoku', resultat.mistakes, { lowerIsBetter: true });
+    const { isRecord } = stats.record('sudoku', resultat.mistakes, { lowerIsBetter: true });
+    const tier = resultat.mistakes === 0 ? 'excellent' : resultat.mistakes <= 2 ? 'bien' : 'encourageant';
     container.replaceChildren(
       element('h1', { text: 'Grille terminée' }),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: resultat.mistakes === 0

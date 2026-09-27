@@ -63,21 +63,31 @@ export function createStats(storage) {
    * never come back down.
    *
    * The first game is handled apart: `asHistory` starts `best` at 0, so a plain
-   * `Math.min` would pin the record at zero for ever.
+   * `Math.min` would pin the record at zero for ever. It is also, on purpose,
+   * never itself an `isRecord`: there is nothing yet to have beaten.
+   *
+   * Returns whether this very score just became the new record, so a screen
+   * can say so — computed here, once, rather than in every game's screen.js,
+   * each reimplementing the same `lowerIsBetter` comparison against a `best`
+   * it would have to read before calling this and could easily get wrong.
    */
   function record(gameId, score, { lowerIsBetter = false, today = todayKey() } = {}) {
     const saved = asHistory(storage.get(`stats.${gameId}`, null));
     const first = saved.played === 0;
+    const previousBest = saved.best;
     saved.played += 1;
+    let isRecord = false;
     if (first) {
       saved.best = score;
     } else {
-      saved.best = lowerIsBetter ? Math.min(saved.best, score) : Math.max(saved.best, score);
+      isRecord = lowerIsBetter ? score < previousBest : score > previousBest;
+      saved.best = lowerIsBetter ? Math.min(previousBest, score) : Math.max(previousBest, score);
     }
     saved.recent = [...saved.recent, score].slice(-RECENT);
     saved.lastPlayed = today;
     storage.set(`stats.${gameId}`, saved);
     updateStreak(today);
+    return { isRecord, best: saved.best, played: saved.played };
   }
 
   function updateStreak(today) {

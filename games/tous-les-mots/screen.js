@@ -3,6 +3,7 @@
 
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { createAllWords } from './game.js';
 
 /**
@@ -115,7 +116,12 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
 
   function finish() {
     const result = game.finish();
-    stats.record('tous-les-mots', result.found);
+    const { isRecord } = stats.record('tous-les-mots', result.found);
+    // Every word in the rack found, some of them, or none — the ratio is what
+    // decides the tone, since "found 4" means something different on a rack
+    // of 5 than on a rack of 40.
+    const tier = result.found === 0 ? 'encourageant'
+      : result.found === result.total ? 'excellent' : 'bien';
     const scoreText =
       `${result.found} ${agree(result.found, 'mot')} ${agree(result.found, 'trouvé')} ` +
       `sur ${result.total}`;
@@ -136,6 +142,8 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
         ]);
     container.replaceChildren(
       element('h1', { text: 'Partie terminée' }),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', { class: 'score', text: scoreText }),
       missedSection,
       button('Nouvelle partie', startGame),

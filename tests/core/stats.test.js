@@ -152,6 +152,48 @@ test('a game where more is better is unchanged', () => {
   assert.equal(stats.read('mot-le-plus-long').best, 9);
 });
 
+test('record() reports a record on the first game, but does not call it one', () => {
+  const stats = freshStats();
+  const resultat = stats.record('jeu', 4, { today: '2026-09-10' });
+  // Nothing to have beaten yet: the first game sets the bar, it does not clear it.
+  assert.equal(resultat.isRecord, false);
+  assert.equal(resultat.best, 4);
+  assert.equal(resultat.played, 1);
+});
+
+test('record() reports a record when the score beats the previous best', () => {
+  const stats = freshStats();
+  stats.record('jeu', 4, { today: '2026-09-10' });
+  const resultat = stats.record('jeu', 9, { today: '2026-09-11' });
+  assert.equal(resultat.isRecord, true);
+  assert.equal(resultat.best, 9);
+});
+
+test('record() reports no record when the score does not beat the previous best', () => {
+  const stats = freshStats();
+  stats.record('jeu', 9, { today: '2026-09-10' });
+  const resultat = stats.record('jeu', 4, { today: '2026-09-11' });
+  assert.equal(resultat.isRecord, false);
+  assert.equal(resultat.best, 9);
+});
+
+test('record() honours lowerIsBetter when reporting a record', () => {
+  const stats = freshStats();
+  stats.record('motus', 5, { lowerIsBetter: true, today: '2026-09-10' });
+  const meilleur = stats.record('motus', 3, { lowerIsBetter: true, today: '2026-09-11' });
+  assert.equal(meilleur.isRecord, true);
+  const pire = stats.record('motus', 6, { lowerIsBetter: true, today: '2026-09-12' });
+  assert.equal(pire.isRecord, false);
+  assert.equal(pire.best, 3);
+});
+
+test('record() is not a record when the score merely ties the best', () => {
+  const stats = freshStats();
+  stats.record('jeu', 5, { today: '2026-09-10' });
+  const resultat = stats.record('jeu', 5, { today: '2026-09-11' });
+  assert.equal(resultat.isRecord, false);
+});
+
 test('the day is still accepted, and still moves the streak', () => {
   const store = createStorage(backendWith());
   const stats = createStats(store);
