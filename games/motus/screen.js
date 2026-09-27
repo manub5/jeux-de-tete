@@ -3,6 +3,7 @@
 
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString, todayKey } from '../../core/rng.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { MARKS } from './marking.js';
 import { DEFAULT_LENGTH, LENGTHS } from './pick.js';
 import { MAX_ATTEMPTS, createMotus } from './game.js';
@@ -189,9 +190,24 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     field.value = game.firstLetter.toUpperCase();
     field.addEventListener('input', () => {
       const attendu = game.firstLetter.toUpperCase();
-      if (!field.value.toUpperCase().startsWith(attendu)) {
-        field.value = attendu + field.value.replace(new RegExp(`^${attendu}`, 'i'), '');
+      // Truncate before checking the prefix: `maxlength` only holds back a
+      // keystroke, never a value set in one block — a paste, a suggestion
+      // tapped on the keyboard, a dictated word — which can land here already
+      // at the puzzle's own length.
+      let valeur = field.value.toUpperCase().slice(0, game.length);
+      if (!valeur.startsWith(attendu)) {
+        // A guess already at the puzzle's length is a block replacement, not
+        // a keystroke: prepending the imposed letter would push it one letter
+        // past the puzzle's length and fail for a reason he'd never see —
+        // the field would show the right length while secretly holding one
+        // more. Swap its first letter instead. Only while he is still
+        // composing the word, shorter than that, does prepending make sense:
+        // that is the "forgot the given letter" case this field exists for.
+        valeur = valeur.length === game.length
+          ? attendu + valeur.slice(1)
+          : attendu + valeur;
       }
+      if (field.value !== valeur) field.value = valeur;
     });
     // Lets a second refusal in a row retrigger the shake (see submit below).
     field.addEventListener('animationend', (event) => {
@@ -273,13 +289,16 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     }
     if (game.phase !== 'terminée') game.giveUp();
     const resultat = game.result;
-    stats.record('motus', resultat.score, { lowerIsBetter: true });
+    const { isRecord } = stats.record('motus', resultat.score, { lowerIsBetter: true });
     // Free-play games have no jourActuel: only the daily game's own save
     // tracks whether its result reached stats, so only it gets marked.
     if (daily && jourActuel) jourActuel.markScored();
+    const tier = !resultat.won ? 'encourageant' : resultat.attempts <= 3 ? 'excellent' : 'bien';
 
     const enfants = [
       element('h1', { text: resultat.won ? 'Trouvé\u00a0!' : 'Partie terminée' }),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: resultat.won

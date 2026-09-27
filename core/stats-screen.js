@@ -101,8 +101,10 @@ export function mountStatistiques(container, { stats, storage, games, onQuit, on
       element('div', {}, [
         element('h1', { text: 'Statistiques' }),
         streak > 1
-          ? element('p', { text: `${streak} jours d’affilée.` })
-          : element('p', { class: 'sous-titre', text: 'Reviens demain pour commencer une série.' }),
+          ? element('p', { text: `🔥 ${streak} jours d’affilée.` })
+          : streak === 1
+            ? element('p', { class: 'sous-titre', text: 'Premier jour d’une série. Reviens demain pour la faire durer.' })
+            : element('p', { class: 'sous-titre', text: 'Reviens demain pour commencer une série.' }),
         message,
         fichierInput,
         element('div', { class: 'actions-stats' }, [

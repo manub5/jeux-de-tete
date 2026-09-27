@@ -3,6 +3,7 @@
 
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { LEVELS } from './pick.js';
 import { HINT_COST, createAnagram } from './game.js';
 
@@ -97,9 +98,12 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
 
   function finish() {
     const result = game.finish();
-    stats.record('anagrammes', result.score);
+    const { isRecord } = stats.record('anagrammes', result.score);
+    const tier = !result.found ? 'encourageant' : game.hints === 0 ? 'excellent' : 'bien';
     container.replaceChildren(
       element('h1', { text: result.found ? 'Trouvé\u00a0!' : 'Partie terminée' }),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', { class: 'score', text: `Votre score\u00a0: ${result.score} points` }),
       element('p', {
         text: result.found

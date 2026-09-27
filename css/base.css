@@ -80,6 +80,8 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+  transition: transform 100ms ease-out, box-shadow 100ms ease-out;
 }
 
 .bouton--discret {
@@ -88,7 +90,14 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
   background: transparent;
   color: var(--texte);
   border-color: var(--bordure);
+  box-shadow: none;
 }
+
+/* A little give under the thumb: the one piece of feedback every tap gets,
+   game or menu alike, so the interface always feels touched back. Skipped
+   for `prefers-reduced-motion` with every other animation in the project,
+   below. */
+.bouton:active { transform: translateY(1px); box-shadow: none; }
 
 .bouton:focus-visible { outline: 3px solid var(--texte); outline-offset: 2px; }
 
@@ -145,6 +154,8 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 /* The system can signal that animations are unwanted. We listen. */
 @media (prefers-reduced-motion: reduce) {
   .jeton { animation: none; }
+  .bouton { transition: none; }
+  .bouton:active { transform: none; }
 }
 
 .saisie {
@@ -162,7 +173,33 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
 }
 
 .retour { min-height: 3rem; }
-.score { font-weight: 700; }
+.score {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+/* A short, varied line under the score — see core/encouragements.js. One line
+   of text, deliberately: these sit between the score and the buttons on every
+   end screen, several of which are already measured to the pixel by
+   tests/navigateur/essai_hauteurs.py, so this must cost as little height as
+   the plain paragraph it replaces, not a decorative block of its own. */
+.encouragement { margin: 4px 0 var(--marge); font-style: italic; }
+
+/* The "beat your own record" badge. Same reasoning as .encouragement: inline
+   with the icon rather than a bigger card, so it costs one line, not three. */
+.badge-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 var(--marge);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-texte);
+  font-weight: 700;
+}
+.badge-record::before { content: "🏆"; }
 /* The objective line: two games use it (the longest word and Motus), like
    .score and .retour above. It used to live in the first game's sheet, where
    the second was borrowing it in silence — the same fault as `.actions` under

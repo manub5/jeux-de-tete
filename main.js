@@ -168,7 +168,7 @@ function home(target) {
   );
   const streak = stats.streak();
   if (streak > 1) {
-    target.append(element('p', { text: `${streak} jours d’affilée.` }));
+    target.append(element('p', { text: `🔥 ${streak} jours d’affilée.` }));
   }
 }
 

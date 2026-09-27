@@ -1,5 +1,6 @@
 // games/sequence/screen.js
 import { element, button } from '../../core/ui.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { ZONES } from './zones.js';
 import { VITESSES, createSequenceGame } from './game.js';
 import { createSound } from './son.js';
@@ -217,10 +218,13 @@ export function mountSequence(container, { stats, storage, onQuit }) {
     if (game !== pourJeu) return;
     annuler();
     const longueur = pourJeu.longueur;
-    stats.record('sequence', longueur);
+    const { isRecord } = stats.record('sequence', longueur);
+    const tier = longueur === 0 ? 'encourageant' : longueur >= 6 ? 'excellent' : 'bien';
     game = null;
     container.replaceChildren(element('div', {}, [
       element('h1', { text: 'Partie terminée' }),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: longueur === 0

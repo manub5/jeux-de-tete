@@ -1,5 +1,6 @@
 // games/paires/screen.js
 import { element, button } from '../../core/ui.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { NIVEAUX, createPairsGame } from './game.js';
 import { saveGame, loadGame, clearSave, resumableSave } from './save.js';
 import { SYMBOLES, svgDuSymbole } from './symboles.js';
@@ -180,11 +181,15 @@ export function mountPairs(container, { stats, storage, onQuit }) {
     // 6x10 costs 60 and a mediocre 6x5 costs 40, so a raw record would freeze on
     // the easiest level for ever and stop meaning anything. Zero above the
     // minimum is a perfect game at any size.
-    stats.record('paires', flips - minimum, { lowerIsBetter: true });
+    const { isRecord } = stats.record('paires', flips - minimum, { lowerIsBetter: true });
+    const ecart = flips - minimum;
+    const tier = ecart === 0 ? 'excellent' : ecart <= minimum * 0.2 ? 'bien' : 'encourageant';
     clearSave(storage);
     game = null;
     container.replaceChildren(element('div', {}, [
       element('h1', { text: 'Toutes les paires sont trouvées\u00a0!' }),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: flips === minimum

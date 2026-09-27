@@ -3,6 +3,7 @@
 
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
+import { messageFin, messageRecord } from '../../core/encouragements.js';
 import { createGame } from './game.js';
 
 export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) {
@@ -134,10 +135,16 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
 
   function finish() {
     const result = game.finish();
-    stats.record('mot-le-plus-long', result.score);
+    const { isRecord } = stats.record('mot-le-plus-long', result.score);
+    // As good as this rack gets, a word found but shorter than the best, or
+    // nothing at all — the same three-tier read as every other game.
+    const tier = result.score === 0 ? 'encourageant'
+      : result.score >= result.bestLength ? 'excellent' : 'bien';
     container.replaceChildren(
       element('h1', { text: 'Partie terminée' }),
       renderLetters(),
+      element('p', { class: 'encouragement', text: messageFin(tier) }),
+      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: `Votre score\u00a0: ${result.score} lettres`,
