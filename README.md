@@ -39,6 +39,20 @@ Avant chaque `git push` qui touche un fichier du site :
     .venv/bin/python -m tools.build_dictionary
     .venv/bin/python -m pytest tools/tests/ -q
 
+`tools/dic/frequency.py` fait maintenant correspondre un mot de Lexique 3
+orthographié avec « œ »/« æ » à sa forme en « oe »/« ae » quand le dictionnaire
+lui-même n'utilise que la ligature (cœur, sœur, bœuf, œuf, œil, nœud, vœu,
+œuvre…) — sans ce correctif, ces mots pourtant très courants ne pouvaient
+jamais devenir une énigme d'Anagrammes ou de Motus, ni servir de tirage de
+base à « Trouver tous les mots ». `data/frequences.txt.gz` livré dans ce dépôt
+n'a **pas** encore été refabriqué avec ce correctif — la refabrication demande
+un accès réseau à `codeberg.org` et `lexique.org` qui n'était pas disponible
+au moment où ce correctif a été écrit. La prochaine refabrication du
+dictionnaire en profitera automatiquement ; penser à incrémenter aussi
+`FREQUENCY_VERSION` dans `lexicon/loader.js` à ce moment-là, sans quoi un
+téléphone ayant déjà mis le fichier en cache ne retéléchargerait pas le
+nouveau.
+
 ## Licences
 
 Le dictionnaire dérive des dictionnaires orthographiques français de

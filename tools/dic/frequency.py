@@ -44,17 +44,59 @@ def read_frequencies(path: Path) -> dict[str, float]:
     return frequencies
 
 
+#: Only the French ligatures — not a full accent fold. `œ`/`æ` are the one
+#: spelling where Lexique 3's own "ortho" column is not guaranteed to agree
+#: with Dicollecte: one may spell a word with the ligature, the other with its
+#: two-letter expansion. A full accent fold (as `tools.dic.text.fold` does, for
+#: an entirely different job — building a Scrabble-style signature) would be
+#: the wrong tool here: it also drops every other accent, so it would match
+#: Lexique's "cote" against the dictionary's "côte" or "côté" — three real,
+#: unrelated words — under the same key. This table only ever touches the two
+#: characters French orthography actually ligatures.
+_LIGATURES = {"œ": "oe", "æ": "ae"}
+
+
+def _without_ligatures(word: str) -> str:
+    for ligature, expansion in _LIGATURES.items():
+        word = word.replace(ligature, expansion)
+    return word
+
+
 def keep_known(
     frequencies: dict[str, float],
     words: set[str],
     minimum: float = MIN_FREQUENCY,
 ) -> dict[str, float]:
-    """Only words we actually ship, and only those common enough to be fair."""
-    return {
-        word: value
-        for word, value in frequencies.items()
-        if word in words and value >= minimum
+    """Only words we actually ship, and only those common enough to be fair.
+
+    Matched by exact spelling first, as always. A handful of common words —
+    cœur, sœur, bœuf, œuf, œil, nœud, vœu, œuvre — carry a ligature that French
+    orthography makes mandatory (Larousse, Académie), but that a source table
+    is not guaranteed to spell the same way the shipped dictionary does. Left
+    as a plain exact match, every one of them silently drops out of the pool
+    Anagrammes, Motus and "Trouver tous les mots" draw their puzzles from —
+    not refused in play, just never offered as a puzzle, for no reason a
+    player could see. The fallback below catches exactly that mismatch, and
+    nothing wider: it only fires for a dictionary word that actually contains
+    a ligature, so it can never pull two unrelated, ligature-free words
+    together under one key.
+    """
+    expanded_index = {
+        _without_ligatures(word): word for word in words if _without_ligatures(word) != word
     }
+    kept: dict[str, float] = {}
+    for word, value in frequencies.items():
+        if value < minimum:
+            continue
+        if word in words:
+            canonical = word
+        else:
+            canonical = expanded_index.get(word)
+            if canonical is None:
+                continue
+        if canonical not in kept or value > kept[canonical]:
+            kept[canonical] = value
+    return kept
 
 
 def write_frequencies(frequencies: dict[str, float], path: Path) -> None:

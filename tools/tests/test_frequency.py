@@ -61,6 +61,37 @@ def test_the_default_threshold_is_one_per_million() -> None:
     assert MIN_FREQUENCY == 1.0
 
 
+def test_a_ligature_spelled_as_two_letters_is_still_matched() -> None:
+    # Lexique's own "ortho" column is not guaranteed to spell "cœur" with the
+    # ligature the shipped dictionary uses — this is the mismatch that used to
+    # drop the word from the frequency file entirely, silently, with nothing
+    # in the build's own output to say so.
+    kept = keep_known({"coeur": 120.0}, {"cœur"})
+    assert kept == {"cœur": 120.0}
+
+
+def test_a_ligature_already_spelled_the_same_way_needs_no_fallback() -> None:
+    kept = keep_known({"cœur": 120.0}, {"cœur"})
+    assert kept == {"cœur": 120.0}
+
+
+def test_the_ligature_fallback_never_merges_unrelated_words() -> None:
+    # "cote", "côte" and "côté" are three different French words that would
+    # collapse onto one another under a full accent fold — the fallback below
+    # only ever touches œ/æ, so none of Lexique's plain-accent spellings can
+    # collide with a dictionary word this way.
+    kept = keep_known({"cote": 10.0}, {"côte", "côté"})
+    assert kept == {}
+
+
+def test_the_higher_frequency_wins_when_both_spellings_are_present() -> None:
+    # Belt and braces: even if a source table somehow listed both spellings of
+    # the same ligature word, the dictionary's one canonical entry keeps the
+    # larger of the two frequencies, not whichever happened to be read last.
+    kept = keep_known({"cœur": 50.0, "coeur": 120.0}, {"cœur"})
+    assert kept == {"cœur": 120.0}
+
+
 def test_a_spelling_whose_only_frequency_is_zero_is_still_read(tmp_path: Path) -> None:
     path = tmp_path / "lexique.tsv"
     path.write_text("ortho\tfreqfilms2\nnul\t0\n", encoding="utf-8")
