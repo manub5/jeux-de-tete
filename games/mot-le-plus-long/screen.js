@@ -4,10 +4,12 @@
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { createGame } from './game.js';
 
 export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) {
   let game;
+  let fermerPopup = null;
 
   function render() {
     container.replaceChildren(
@@ -62,30 +64,16 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
         feedback.className = 'retour erreur';
         feedback.textContent = 'Ce mot utilise des lettres qui ne sont pas dans le tirage.';
       } else if (result.reason === 'refusé') {
-        // He struck this word out himself; offer him the way back.
         feedback.className = 'retour erreur';
         feedback.textContent = `«\u00a0${attempt}\u00a0» est dans vos mots refusés.`;
-        feedback.append(acceptButton(attempt));
       } else {
         feedback.className = 'retour erreur';
         feedback.textContent = `«\u00a0${attempt}\u00a0» n’est pas dans le dictionnaire.`;
-        feedback.append(acceptButton(attempt));
       }
       field.value = '';
       field.focus();
       refreshScore();
       refreshProposals();
-    }
-
-    /** Spec section 5: the player's own corrections, offered where it hurts. */
-    function acceptButton(word) {
-      return button('Ce mot existe', () => {
-        lexicon.accept(word);
-        // Replay it straight away: telling him the word is accepted while his
-        // score does not move is worse than refusing it in the first place.
-        field.value = word;
-        submit();
-      }, { className: 'bouton bouton--discret' });
     }
 
     function refuseButton(word) {
@@ -134,17 +122,19 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
   }
 
   function finish() {
+    fermerPopup?.();
     const result = game.finish();
     const { isRecord } = stats.record('mot-le-plus-long', result.score);
     // As good as this rack gets, a word found but shorter than the best, or
     // nothing at all — the same three-tier read as every other game.
     const tier = result.score === 0 ? 'encourageant'
       : result.score >= result.bestLength ? 'excellent' : 'bien';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
     container.replaceChildren(
       element('h1', { text: 'Partie terminée' }),
       renderLetters(),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: `Votre score\u00a0: ${result.score} lettres`,
@@ -171,5 +161,5 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
   }
 
   newGame();
-  return () => {};
+  return () => { fermerPopup?.(); };
 }

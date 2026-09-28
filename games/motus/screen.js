@@ -4,6 +4,7 @@
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString, todayKey } from '../../core/rng.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { MARKS } from './marking.js';
 import { DEFAULT_LENGTH, LENGTHS } from './pick.js';
 import { MAX_ATTEMPTS, createMotus } from './game.js';
@@ -33,6 +34,7 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
   // scheduleFinish() and finish() below. Kept at this scope because both
   // "Nouvelle partie" and the router's cleanup need to reach it.
   let finTimer = null;
+  let fermerPopup = null;
 
   /**
    * Defers finish() so the player sees the last row land (and, on a win, its
@@ -166,15 +168,21 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
         );
       });
       // The attempts he has left, drawn empty, so the six are visible from the
-      // start rather than appearing one by one.
+      // start rather than appearing one by one. The first letter is given for
+      // the whole game, not just this one attempt, so every remaining row
+      // shows it in its first cell — the board itself says what used to be
+      // visible only in the text field above it.
       for (let i = game.rows.length; i < MAX_ATTEMPTS; i++) {
-        lignes.push(
-          element('div', { class: 'ligne' },
-            Array.from({ length: game.length }, () =>
-              element('span', { class: 'case case--vide' })
-            )
-          )
+        const premiereCase = element('span', {
+          class: 'case case--imposee',
+          'aria-label': `${game.firstLetter.toUpperCase()}, lettre donnée`,
+        }, [
+          element('span', { class: 'lettre', text: game.firstLetter.toUpperCase() }),
+        ]);
+        const autresCases = Array.from({ length: game.length - 1 }, () =>
+          element('span', { class: 'case case--vide' })
         );
+        lignes.push(element('div', { class: 'ligne' }, [premiereCase, ...autresCases]));
       }
       grille.replaceChildren(...lignes);
     }
@@ -287,6 +295,7 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
       clearTimeout(finTimer);
       finTimer = null;
     }
+    fermerPopup?.();
     if (game.phase !== 'terminée') game.giveUp();
     const resultat = game.result;
     const { isRecord } = stats.record('motus', resultat.score, { lowerIsBetter: true });
@@ -294,11 +303,12 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
     // tracks whether its result reached stats, so only it gets marked.
     if (daily && jourActuel) jourActuel.markScored();
     const tier = !resultat.won ? 'encourageant' : resultat.attempts <= 3 ? 'excellent' : 'bien';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
 
     const enfants = [
       element('h1', { text: resultat.won ? 'Trouvé\u00a0!' : 'Partie terminée' }),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: resultat.won
@@ -353,5 +363,6 @@ export function mountMotus(container, { lexicon, stats, storage, frequencies, on
       clearTimeout(finTimer);
       finTimer = null;
     }
+    fermerPopup?.();
   };
 }

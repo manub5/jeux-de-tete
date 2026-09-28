@@ -4,6 +4,7 @@
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { LEVELS } from './pick.js';
 import { HINT_COST, createAnagram } from './game.js';
 
@@ -11,6 +12,9 @@ const LABELS = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
 
 export function mountAnagrammes(container, { solver, lexicon, stats, frequencies, onQuit }) {
   let game = null;
+  // Closes the current end-of-game popup, if one is still on screen —
+  // leaving mid-popup (router navigation) must take it down too.
+  let fermerPopup = null;
 
   function render() {
     container.replaceChildren(
@@ -97,13 +101,15 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
   }
 
   function finish() {
+    fermerPopup?.();
     const result = game.finish();
     const { isRecord } = stats.record('anagrammes', result.score);
     const tier = !result.found ? 'encourageant' : game.hints === 0 ? 'excellent' : 'bien';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
     container.replaceChildren(
       element('h1', { text: result.found ? 'Trouvé\u00a0!' : 'Partie terminée' }),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', { class: 'score', text: `Votre score\u00a0: ${result.score} points` }),
       element('p', {
         text: result.found
@@ -124,5 +130,5 @@ export function mountAnagrammes(container, { solver, lexicon, stats, frequencies
   }
 
   render();
-  return () => {};
+  return () => { fermerPopup?.(); };
 }

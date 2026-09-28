@@ -1,7 +1,14 @@
 // lexicon/lexicon.js
 // Word validation, with the player's own corrections taking precedence.
-// The shipped dictionary is not the ODS; this is how the gap gets closed over
-// time (spec section 5).
+// The shipped dictionary is not the ODS: reject() lets him strike out a word
+// he disagrees with, wherever a game offers that button.
+//
+// accept() has no button left anywhere in the games — letting him declare any
+// string a word of his own choosing was too easy to lean on for a score no
+// dictionary actually gave him. It stays here, and corrections.accepted stays
+// a real set: a backup written before this change still restores exactly the
+// words it held, through the same reload() main.js already calls, rather
+// than silently losing them the moment nothing can be added again.
 
 import { fold, signature } from './signature.js';
 

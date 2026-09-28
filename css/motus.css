@@ -8,6 +8,13 @@
    one dark value clears AA in both themes, and it stays this game's own. */
 :root {
   --case-present-texte: #1b1b1b; /* on #b8860b, both themes: 5.29:1 */
+  /* The real show's three marks are red / yellow / grey (see .case--placed,
+     .case--present below). `.case--absent` used to carry no fill at all —
+     an absent letter looked the same as a cell nobody had guessed yet, one
+     shade of the faint text apart. Fixed across themes, same reasoning as
+     the two above: this is the game's own colour, not the interface's. */
+  --case-absent-fond: #9a9a9a;
+  --case-absent-texte: #1b1b1b; /* on #9a9a9a, both themes: 6.12:1 */
 }
 
 .grille {
@@ -37,8 +44,14 @@
 
 .case--placed { background: var(--erreur); color: var(--texte-sur-erreur); border-color: var(--erreur); }
 .case--present { background: #b8860b; color: var(--case-present-texte); border-color: #b8860b; }
-.case--absent { color: var(--texte-faible); }
+.case--absent { background: var(--case-absent-fond); color: var(--case-absent-texte); border-color: var(--case-absent-fond); }
 .case--vide { border-style: dashed; }
+
+/* The imposed first letter, drawn on every row still to play — not a mark:
+   he has not guessed it, the game gave it to him, so it keeps the same
+   dashed, unplayed border as `.case--vide` and a quiet colour, never one of
+   the three scored ones above. */
+.case--imposee { border-style: dashed; color: var(--texte-faible); }
 
 /* The sign beside the colour: the marking must never rest on colour alone. */
 .signe { font-size: 0.7rem; line-height: 1; }

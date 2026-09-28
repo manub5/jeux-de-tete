@@ -179,27 +179,49 @@ h1 { font-size: 1.6rem; margin: 0 0 var(--marge); }
   color: var(--accent);
 }
 
-/* A short, varied line under the score — see core/encouragements.js. One line
-   of text, deliberately: these sit between the score and the buttons on every
-   end screen, several of which are already measured to the pixel by
-   tests/navigateur/essai_hauteurs.py, so this must cost as little height as
-   the plain paragraph it replaces, not a decorative block of its own. */
-.encouragement { margin: 4px 0 var(--marge); font-style: italic; }
-
-/* The "beat your own record" badge. Same reasoning as .encouragement: inline
-   with the icon rather than a bigger card, so it costs one line, not three. */
-.badge-record {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0 var(--marge);
-  padding: 4px 10px;
+/* The end-of-game notification — see core/popup.js and core/encouragements.js.
+   Fixed and outside the normal flow on purpose: it is appended to
+   `document.body`, never inside `#app`, so it can never push a button below
+   the fold on a screen tests/navigateur/essai_hauteurs.py measures to the
+   pixel. `env(safe-area-inset-top)` keeps it clear of a notch. The 64px below
+   clears every screen's own `h1` (16px of top padding, a 1.6rem line at this
+   body's 1.5 line-height — about 38px — plus its own bottom margin): every
+   end screen opens on an `h1`, and this must sit under its text, never over
+   it, however briefly. */
+.popup {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  /* The base, resting transform: the animation below only supplies the
+     motion around it, `from`/`to` including this same offset, so the popup
+     stays centred once each animation ends and hands control back here. */
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: calc(100% - 2 * var(--marge));
+  width: max-content;
+  padding: 10px 20px;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-texte);
   font-weight: 700;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  animation: popup-entre 220ms ease-out;
 }
-.badge-record::before { content: "🏆"; }
+.popup--sort { animation: popup-sort 220ms ease-in forwards; }
+
+@keyframes popup-entre {
+  from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+@keyframes popup-sort {
+  from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup, .popup--sort { animation: none; }
+}
 /* The objective line: two games use it (the longest word and Motus), like
    .score and .retour above. It used to live in the first game's sheet, where
    the second was borrowing it in silence — the same fault as `.actions` under
