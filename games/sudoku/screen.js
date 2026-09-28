@@ -4,6 +4,7 @@
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { DIFFICULTIES } from './generate.js';
 import { clearSave, loadOrStart, resumableSave } from './save.js';
 
@@ -22,6 +23,7 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
   // scheduleFinish() and finish() below. Kept at this scope because both a
   // fresh start() and the router's cleanup need to reach it.
   let finTimer = null;
+  let fermerPopup = null;
 
   /**
    * Defers finish() so the player sees the last digit land before the end
@@ -239,16 +241,18 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       clearTimeout(finTimer);
       finTimer = null;
     }
+    fermerPopup?.();
     const resultat = game.finish();
     clearSave(storage);
     // Fewer mistakes is better, like Motus counts attempts — core/stats.js needs
     // telling, or the menu would show his worst grid as his record.
     const { isRecord } = stats.record('sudoku', resultat.mistakes, { lowerIsBetter: true });
     const tier = resultat.mistakes === 0 ? 'excellent' : resultat.mistakes <= 2 ? 'bien' : 'encourageant';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
     container.replaceChildren(
       element('h1', { text: 'Grille terminée' }),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: resultat.mistakes === 0
@@ -287,5 +291,6 @@ export function mountSudoku(container, { stats, storage, onQuit }) {
       clearTimeout(finTimer);
       finTimer = null;
     }
+    fermerPopup?.();
   };
 }

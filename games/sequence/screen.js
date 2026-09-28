@@ -1,6 +1,7 @@
 // games/sequence/screen.js
 import { element, button } from '../../core/ui.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { ZONES } from './zones.js';
 import { VITESSES, createSequenceGame } from './game.js';
 import { createSound } from './son.js';
@@ -25,6 +26,7 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   // `timer`'s slot. But it is still a live setTimeout, and the cleanup rule
   // is absolute — annuler() below cancels this one too, not just `timer`.
   let allumeTimer = null;
+  let fermerPopup = null;
   /** The current board's painters, replaced on every render, null at the menu. */
   let peindreCourant = null;
   let allumerCourant = null;
@@ -61,6 +63,8 @@ export function mountSequence(container, { stats, storage, onQuit }) {
   function annuler() {
     annulerFlux();
     annulerAllume();
+    fermerPopup?.();
+    fermerPopup = null;
   }
 
   function plus_tard(delai, quoi) {
@@ -220,11 +224,12 @@ export function mountSequence(container, { stats, storage, onQuit }) {
     const longueur = pourJeu.longueur;
     const { isRecord } = stats.record('sequence', longueur);
     const tier = longueur === 0 ? 'encourageant' : longueur >= 6 ? 'excellent' : 'bien';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
     game = null;
     container.replaceChildren(element('div', {}, [
       element('h1', { text: 'Partie terminée' }),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: longueur === 0

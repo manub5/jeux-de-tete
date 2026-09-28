@@ -4,6 +4,7 @@
 import { button, element } from '../../core/ui.js';
 import { createRng, seedFromString } from '../../core/rng.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { createAllWords } from './game.js';
 
 /**
@@ -16,6 +17,7 @@ function agree(count, word) {
 
 export function mountAllWords(container, { solver, lexicon, stats, storage, frequencies, onQuit }) {
   let game;
+  let fermerPopup = null;
 
   function render() {
     const tiles = element('div', { class: 'tirage', 'aria-label': 'Vos sept lettres' },
@@ -47,8 +49,11 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
       court: 'Il faut au moins trois lettres.',
       lettres: 'Ce mot n’est pas dans ces lettres.',
       'déjà': 'Vous l’avez déjà trouvé.',
-      // Il l'a lui-même écarté depuis « le mot le plus long ». Le lui dire, plutôt
-      // que de prétendre que le dictionnaire l'ignore.
+      // No game still offers a button to strike a word out — see
+      // lexicon/lexicon.js — but a backup made before that change can still
+      // hold one in `corrections.rejected`. Naming it, rather than pretending
+      // the dictionary itself ignores it, stays the honest message for that
+      // word until such a backup is restored.
       'refusé': 'Vous avez écarté ce mot du dictionnaire.',
     };
 
@@ -115,6 +120,7 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
   }
 
   function finish() {
+    fermerPopup?.();
     const result = game.finish();
     const { isRecord } = stats.record('tous-les-mots', result.found);
     // Every word in the rack found, some of them, or none — the ratio is what
@@ -122,6 +128,9 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
     // of 5 than on a rack of 40.
     const tier = result.found === 0 ? 'encourageant'
       : result.found === result.total ? 'excellent' : 'bien';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
     const scoreText =
       `${result.found} ${agree(result.found, 'mot')} ${agree(result.found, 'trouvé')} ` +
       `sur ${result.total}`;
@@ -142,8 +151,6 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
         ]);
     container.replaceChildren(
       element('h1', { text: 'Partie terminée' }),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', { class: 'score', text: scoreText }),
       missedSection,
       button('Nouvelle partie', startGame),
@@ -162,5 +169,5 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
   }
 
   startGame();
-  return () => {};
+  return () => { fermerPopup?.(); };
 }

@@ -1,6 +1,7 @@
 // games/paires/screen.js
 import { element, button } from '../../core/ui.js';
 import { messageFin, messageRecord } from '../../core/encouragements.js';
+import { showPopup } from '../../core/popup.js';
 import { NIVEAUX, createPairsGame } from './game.js';
 import { saveGame, loadGame, clearSave, resumableSave } from './save.js';
 import { SYMBOLES, svgDuSymbole } from './symboles.js';
@@ -15,6 +16,7 @@ export function mountPairs(container, { stats, storage, onQuit }) {
   let game = null;
   let couvreTimer = null;
   let finTimer = null;
+  let fermerPopup = null;
   let abandonConfirm = false;
   /** The current board's abandon button, so resetAbandon() can relabel it
       without rebuilding the screen underneath a tap in progress. */
@@ -26,6 +28,8 @@ export function mountPairs(container, { stats, storage, onQuit }) {
     for (const id of [couvreTimer, finTimer]) if (id !== null) clearTimeout(id);
     couvreTimer = null;
     finTimer = null;
+    fermerPopup?.();
+    fermerPopup = null;
   }
 
   function resetAbandon() {
@@ -184,12 +188,13 @@ export function mountPairs(container, { stats, storage, onQuit }) {
     const { isRecord } = stats.record('paires', flips - minimum, { lowerIsBetter: true });
     const ecart = flips - minimum;
     const tier = ecart === 0 ? 'excellent' : ecart <= minimum * 0.2 ? 'bien' : 'encourageant';
+    fermerPopup = showPopup(
+      isRecord ? `${messageRecord()} ${messageFin(tier)}` : messageFin(tier)
+    );
     clearSave(storage);
     game = null;
     container.replaceChildren(element('div', {}, [
       element('h1', { text: 'Toutes les paires sont trouvées\u00a0!' }),
-      element('p', { class: 'encouragement', text: messageFin(tier) }),
-      ...(isRecord ? [element('p', { class: 'badge-record', text: messageRecord() })] : []),
       element('p', {
         class: 'score',
         text: flips === minimum
