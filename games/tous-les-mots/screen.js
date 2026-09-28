@@ -49,8 +49,11 @@ export function mountAllWords(container, { solver, lexicon, stats, storage, freq
       court: 'Il faut au moins trois lettres.',
       lettres: 'Ce mot n’est pas dans ces lettres.',
       'déjà': 'Vous l’avez déjà trouvé.',
-      // Il l'a lui-même écarté depuis « le mot le plus long ». Le lui dire, plutôt
-      // que de prétendre que le dictionnaire l'ignore.
+      // No game still offers a button to strike a word out — see
+      // lexicon/lexicon.js — but a backup made before that change can still
+      // hold one in `corrections.rejected`. Naming it, rather than pretending
+      // the dictionary itself ignores it, stays the honest message for that
+      // word until such a backup is restored.
       'refusé': 'Vous avez écarté ce mot du dictionnaire.',
     };
 

@@ -59,7 +59,6 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
         feedback.textContent = result.improved
           ? `${result.word} — ${result.length} lettres, votre meilleur mot\u00a0!`
           : `${result.word} — ${result.length} lettres.`;
-        feedback.replaceChildren(feedback.textContent, refuseButton(result.word));
       } else if (result.reason === 'lettres') {
         feedback.className = 'retour erreur';
         feedback.textContent = 'Ce mot utilise des lettres qui ne sont pas dans le tirage.';
@@ -74,15 +73,6 @@ export function mountLongestWord(container, { solver, lexicon, stats, onQuit }) 
       field.focus();
       refreshScore();
       refreshProposals();
-    }
-
-    function refuseButton(word) {
-      return button('Ce mot ne devrait pas exister', () => {
-        lexicon.reject(word);
-        feedback.className = 'retour';
-        feedback.textContent =
-          `«\u00a0${word}\u00a0» est retiré de votre dictionnaire. Il reste compté pour cette partie.`;
-      }, { className: 'bouton bouton--discret' });
     }
 
     const score = element('p', { class: 'score' });

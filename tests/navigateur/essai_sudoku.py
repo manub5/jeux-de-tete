@@ -646,7 +646,7 @@ with sync_playwright() as pw:
     page.wait_for_timeout(2500)
     caches = page.evaluate("() => caches.keys()")
     dit(f"  caches : {caches}")
-    exige(any("v9" in c for c in caches), "le cache est en v9")
+    exige(any("v10" in c for c in caches), "le cache est en v10")
     ctx.set_offline(True)
     for jeu, marqueur in [
         ("Le mot le plus long", ".jeton"),
